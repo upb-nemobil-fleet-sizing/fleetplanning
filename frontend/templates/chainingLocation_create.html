@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <title>Create Chaining Location</title>
+{% endblock %}
+
+{% block content %}
+    <h2>Create Chaining Location</h2>
+    {% if error %}
+      <div class="alert alert-danger" role="alert">{{ error }}</div>
+    {% endif %}
+    <form method="POST">
+        <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label for="Guid">Guid</label>
+                <input type="text" class="form-control" id="Guid" name="Guid">
+            </div>
+            <div class="mb-3">
+                <div class="row">
+                    <div class="col-md-10">
+                        <label for="start_latitude">Start Latitude</label>
+                        <input type="number" step="0.000001" class="form-control me-2" id="start_latitude" name="start_latitude" required>
+                        <label for="start_longitude">Start Longitude</label>
+                        <input type="number" step="0.000001" class="form-control me-2" id="start_longitude" name="start_longitude" required>
+                    </div>
+                    <div class="col-md-2 mt-2">
+                        <br/>
+                        <br/>
+                        <button type="button" id="setStartBtn" class="btn btn-outline-primary">Set Start</button>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+            <label for="AdditionalTime">Additional Time</label>
+            <input type="number" class="form-control" id="AdditionalTime" name="AdditionalTime" value="60">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label for="Type">Type</label>
+                <select name="Type" class="form-select">
+                    <option value="Chain">Chain</option>
+                    <option value="Unchain">Unchain</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <div class="row">
+                    <div class="col-md-10">
+                        <label for="end_latitude">End Latitude</label>
+                        <input type="number" step="0.000001" class="form-control me-2" id="end_latitude" name="end_latitude" required>
+                        <label for="end_longitude">End Longitude</label>
+                        <input type="number" step="0.000001" class="form-control me-2" id="end_longitude" name="end_longitude" required>
+                    </div>
+                    <div class="col-md-2 mt-2">
+                        <br/>
+                        <br/>
+                        <button type="button" id="setEndBtn" class="btn btn-outline-primary">Set End</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <div id="map" style="height: 400px;" class="mb-3"></div>
+
+        <button type="submit" class="btn btn-success">Speichern</button>
+        <a href="{{ url_for('index') }}{{ nav_context_query or '' }}" class="btn btn-secondary">Abbrechen</a>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form_maps.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            initDualPointEntityMap({
+                mapId: "map",
+                overlay: {{ map_overlay_data|tojson }},
+                mode: "create",
+                primaryType: "chaining",
+                editable: true,
+                startLatInputId: "start_latitude",
+                startLngInputId: "start_longitude",
+                endLatInputId: "end_latitude",
+                endLngInputId: "end_longitude",
+                startButtonId: "setStartBtn",
+                endButtonId: "setEndBtn",
+                lineColor: "#9C2BCB"
+            });
+        });
+    </script>
+{% endblock %}

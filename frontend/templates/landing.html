@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}NeMo.bil Dashboard{% endblock %}
+
+{% block content %}
+<section class="landing-hero mb-4">
+  <div class="landing-hero-inner">
+    <p class="landing-kicker mb-2">NeMo.bil Projekt</p>
+    <h1 class="display-5 fw-bold mb-3">Nachhaltige Flottenplanung datenbasiert umsetzen</h1>
+    <p class="lead mb-4">
+      Im Rahmen des vom BMWE (vormals BMWK) geförderten Projekts NeMo.bil wollen die Beteiligten ein Mobilitätssystem 
+      für den bedarfsgerechten Personen- und Gütertransport entwickeln und prototypisch aufbauen. Dazu wird ein innovativer 
+      Ansatz mit zwei automatisierten Fahrzeug-Typen verfolgt: Schwärme kleiner Fahrzeuge bedienen die ersten und letzten 
+      Meilen und vereinen sich auf längeren Strecken zu einem Konvoi, der von einem größeren Fahrzeug gezogen wird. Das 
+      neuartige System soll einen ressourcenschonenden individuellen öffentlichen Nahverkehr ermöglichen (iÖV).
+    </p>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{{ url_for('upload_page') }}" class="btn btn-primary btn-lg">{{ 'App starten' if demo_mode else 'Zum Dateiupload' }}</a>
+      <a href="{{ url_for('output_page') if demo_mode else url_for('index') }}" class="btn btn-outline-light btn-lg">{{ 'Zu den Ergebnissen' if demo_mode else 'Zur Konfiguration' }}</a>
+    </div>
+  </div>
+</section>
+
+<section class="mb-4 text-center">
+  <img src="{{ url_for('static', filename='images/NeMo-Bild.png') }}" alt="Projektbeschreibung" class="img-fluid rounded shadow-sm">
+</section>
+
+<section class="mb-4">
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h2 class="h4 mb-3">Was ist NeMo.bil?</h2>
+          <p class="mb-0">
+            NeMo.bil ist ein Entwicklungs- und Erprobungsumfeld für zukunftsfähige Mobilitätskonzepte.
+            Das Projekt setzt sich mit der Frage auseinander, wie vernetzte, elektrifizierte Flotten effizient geplant und
+            im Realbetrieb robust gesteuert werden können.
+          </p>
+          <a href="https://nemo-bil.de/" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm mt-3">
+            Mehr zum Projekt auf nemo-bil.de
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h2 class="h4 mb-3">Wofür ist diese App gedacht?</h2>
+          <p class="mb-0">
+            Diese Anwendung soll Planungsteams dabei unterstützen, Eingabedaten zu validieren, Szenarien aufzubauen
+            und Simulationsergebnisse strukturiert auszuwerten. So können Annahmen früh geprüft und Entscheidungen
+            fundierter validiert werden.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="mb-4">
+  <h2 class="h4 mb-3">So funktioniert die App</h2>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm landing-step">
+        <div class="card-body">
+          <p class="landing-step-number">1</p>
+          <h3 class="h5">Daten importieren</h3>
+          <p class="mb-0">
+            {% if demo_mode %}
+              Szenarien auswählen, prüfen und für die Simulation bereitstellen.
+            {% else %}
+              BaseData sowie Fahrtdaten über Uploadfelder hochladen und für das Szenario bereitstellen.
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm landing-step">
+        <div class="card-body">
+          <p class="landing-step-number">2</p>
+          <h3 class="h5">Szenario konfigurieren</h3>
+          <p class="mb-0">
+            Operation Area, Zeitfenster und Flottenobjekte aufbauen, prüfen oder anpassen.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100 border-0 shadow-sm landing-step">
+        <div class="card-body">
+          <p class="landing-step-number">3</p>
+          <h3 class="h5">Ergebnisse auswerten</h3>
+          <p class="mb-0">
+            Simulationsergebnisse vergleichen, Kennzahlen analysieren und daraus konkrete Handlungsmaßnahmen ableiten.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--
+<section class="mb-4">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h2 class="h4 mb-3">Partnernetzwerk</h2>
+      <p class="text-muted mb-3">
+        Platzhalter für Partnerlogos. Die Logos können später direkt in diese Felder oder als Bilddateien eingebunden werden.
+      </p>
+      <div class="landing-logos">
+        <div class="landing-logo-slot">Partnerlogo 1</div>
+        <div class="landing-logo-slot">Partnerlogo 2</div>
+        <div class="landing-logo-slot">Partnerlogo 3</div>
+        <div class="landing-logo-slot">Partnerlogo 4</div>
+        <div class="landing-logo-slot">Partnerlogo 5</div>
+        <div class="landing-logo-slot">Partnerlogo 6</div>
+      </div>
+    </div>
+  </div>
+</section>
+-->
+{% endblock %}

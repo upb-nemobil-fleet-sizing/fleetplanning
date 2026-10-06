@@ -1,0 +1,22 @@
+{# Background XML-conversion job status - shared between the full page render and the AJAX
+   poll fragment (see /upload/xml-job-fragment). Needs xml_upload_job in context either way,
+   same pattern as _simulation_jobs.html/simulation_jobs_fragment(). #}
+<div id="xmlUploadStatusSection" data-status="{{ xml_upload_job.status or '' }}">
+  {% if xml_upload_job.status in ('queued', 'running') %}
+    <div class="alert alert-warning d-flex align-items-center justify-content-between mb-4" role="alert">
+      <div class="d-flex align-items-center">
+        <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+        <div>
+          XML wird im Hintergrund verarbeitet{% if xml_upload_job.filename %} ({{ xml_upload_job.filename }}){% endif %}...
+          <span class="js-xml-elapsed" data-started-at="{{ xml_upload_job.startedAt or '' }}">{{ xml_upload_job.runtimeText or '' }}</span>
+        </div>
+      </div>
+      <button type="button" id="xmlUploadCancelBtn" class="btn btn-sm btn-outline-danger ms-3">Abbrechen</button>
+    </div>
+  {% elif xml_upload_job.status == 'failed' %}
+    <div class="alert alert-danger mb-4" role="alert">
+      <strong>XML-Verarbeitung fehlgeschlagen{% if xml_upload_job.filename %} ({{ xml_upload_job.filename }}){% endif %}.</strong>
+      <pre class="small mb-0 mt-2" style="white-space: pre-wrap;">{{ xml_upload_job.error }}</pre>
+    </div>
+  {% endif %}
+</div>

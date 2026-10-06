@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <title>Details - {{ num_cabs + 1 }}. Flottenkonfiguration</title>
+    <script src="{{ url_for('static', filename='vendor/plotly-2.33.0/plotly.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.css') }}" />
+    <script src="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/leaflet-geometryutil-0.9.3/leaflet.geometryutil.min.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4 text-center">Details: {{ num_cabs + 1 }}. Flottenkonfiguration</h1>
+
+    <div id="loadingOverlay" class="alert alert-warning text-center shadow-sm" role="alert" style="position:fixed; top:20px; left:50%; transform:translateX(-50%);
+                z-index:1050; display:none; min-width:280px;">
+        <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+        <span id="loadingOverlayText">Daten werden geladen …</span>
+    </div>
+
+    <div id="ganttChartWrap" style="height:600px; overflow-y:auto;">
+        <div id="ganttChart"></div>
+    </div>
+
+    <div id="vehicleDetails" class="mt-4" style="max-height:0; overflow:hidden; opacity:0; transition: max-height 350ms ease, opacity 250ms ease;">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 id="vehicleTitle" class="mb-0">Fahrzeug: —</h3>
+                    <button id="hideVehicleDetails" class="btn btn-sm btn-outline-secondary">Schließen</button>
+                </div>
+
+                <div id="vehicleGantt" style="height:380px;"></div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button id="toggleMapTrips" class="btn btn-outline-secondary ">Fahrten ein-/ausblenden</button>
+                </div>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">
+                    <div class="row">
+                        <div id="vehicleInfo" class="mb-3"></div>
+                        <div class="text-muted small mb-2">
+                            Gesamtkennzahlen für dieses Fahrzeug (unabhängig von der Auswahl im Diagramm)
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="map" style="height: 500px; margin-top: 30px;"></div>
+
+    <div id="movementVizSection" class="card mt-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Flottenbewegung</span>
+        <span>
+          <button id="movementVizLoadBtn" class="btn btn-sm btn-outline-primary" style="display:none;">Anzeigen</button>
+          <button id="movementVizGenerateBtn" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#movementVizConfirmModal" style="display:none;">Erzeugen</button>
+        </span>
+      </div>
+      <div class="card-body">
+        <p id="movementVizHint" class="text-muted small mb-0">Wird gepr&uuml;ft &hellip;</p>
+        <div id="movementVizSpinner" class="text-center py-3" style="display:none;">
+          <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+          <span>Animation wird erzeugt, das kann einen Moment dauern … (<span class="js-movement-elapsed" id="movementVizElapsed" data-started-at=""></span>)</span>
+        </div>
+        <div id="movementVizLoadSpinner" class="text-center py-3" style="display:none;">
+          <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+          <span>Animation wird geladen …</span>
+        </div>
+        <iframe id="movementVizFrame" style="width:100%; height:600px; border:none; display:none;"></iframe>
+      </div>
+    </div>
+
+    <div class="modal fade" id="movementVizConfirmModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Flottenbewegung erzeugen?</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+          </div>
+          <div class="modal-body">
+            <p>Die Animation wird aus den Ausgabedateien dieser Flottenkonfiguration erzeugt. Die
+            entstehende Datei kann mehrere Megabyte gro&szlig; sein, und die Erzeugung kann einen Moment
+            dauern.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
+            <button type="button" id="movementVizConfirmBtn" class="btn btn-primary" data-bs-dismiss="modal">Erzeugen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <button class="btn btn-outline-primary" onclick="closeWindow()">Zurück zur Übersicht</button>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/output_details.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/movement_viz.js') }}"></script>
+    <script>
+        document.body.dataset.numCabs = "{{ num_cabs }}";
+        window.outputDataQuery = {{ (output_data_query or '')|tojson }};
+        window.demoMode = {{ demo_mode|tojson }};
+        function closeWindow() {
+        window.close();
+
+        setTimeout(() => {
+            window.location.href = "{{ url_for('output_page') }}{{ output_data_query or '' }}";
+        }, 300);
+        }
+    </script>
+{% endblock %}

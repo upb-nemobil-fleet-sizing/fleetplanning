@@ -1,0 +1,253 @@
+{# Running/completed simulation tables - shared between the full page render and the
+   AJAX poll fragment (see /simulation-overview/jobs-fragment). Needs running_simulations,
+   completed_simulations, demo_mode in context either way. #}
+<div id="simulationJobsSection" data-has-running="{{ 'true' if running_simulations else 'false' }}">
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Laufende Simulationen</h5>
+      {% if running_simulations %}
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Simulation</th>
+                <th>Konfiguration</th>
+                <th>Ordner</th>
+                <th>Erstellt</th>
+                <th>Gestartet</th>
+                <th>Laufzeit</th>
+                <th>Status</th>
+                <th>Aktion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sim in running_simulations %}
+                <tr>
+                  <td>{{ sim.title }}</td>
+                  <td>{{ sim.detail }}</td>
+                  <td><code>{{ sim.folderName }}</code></td>
+                  <td>{{ sim.createdAt or "-" }}</td>
+                  <td>{{ sim.startedAt or "-" }}</td>
+                  <td><code class="js-runtime" data-started-at="{{ sim.startedAt or '' }}">{{ sim.runtimeText or "-" }}</code></td>
+                  <td>
+                    <span class="badge {{ sim.badgeClass or 'text-bg-warning' }}">{{ sim.statusText }}</span>
+                    {% if sim.error %}
+                      <div class="small text-danger mt-1">{{ sim.error }}</div>
+                    {% endif %}
+                    <div class="small text-muted mt-1">Solver: {{ sim.algorithm }}</div>
+                  </td>
+                  {% if not demo_mode %}
+                    <td>
+                      <form method="POST" class="d-inline">
+                        <input type="hidden" name="action" value="delete_running">
+                        <input type="hidden" name="delete_key" value="{{ sim.deleteKey }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Löschen</button>
+                      </form>
+                    </td>
+                  {% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="small text-muted mt-3">
+          Automatisches Refresh alle 10 Sekunden solange Jobs laufen.
+        </div>
+      {% else %}
+        <div class="text-muted">Aktuell sind keine laufenden Simulationen vorgemerkt.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Abgeschlossene Simulationen</h5>
+      {% if completed_simulations %}
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Simulation</th>
+                <th>Output-Zuordnung</th>
+                <th>Dateien</th>
+                <th>Status</th>
+                {% if not demo_mode %}<th>Aktion</th>{% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for sim in completed_simulations %}
+                <tr>
+                  <td>{{ sim.title }}</td>
+                  <td>{{ sim.detail }}</td>
+                  <td>
+                    <span class="badge {{ 'text-bg-success' if sim.hasSim else 'text-bg-secondary' }}">SIM</span>
+                    <span class="badge {{ 'text-bg-success' if sim.hasCab else 'text-bg-secondary' }}">CAB</span>
+                    <span class="badge {{ 'text-bg-success' if sim.hasPro else 'text-bg-secondary' }}">PRO</span>
+                  </td>
+                  <td><span class="badge text-bg-success">{{ sim.statusText }}</span></td>
+                  <td class="d-flex align-items-center gap-2">
+                    {% if sim.hasSim %}
+                      <a href="{{ sim.outputUrl }}" class="btn btn-sm btn-outline-primary">
+                        Zur Simulationsergebnisseite
+                      </a>
+                    {% else %}
+                      <button type="button" class="btn btn-sm btn-outline-secondary disabled" disabled
+                              title="Keine Ausgabedateien gefunden - Ergebnisse wurden vermutlich außerhalb des Dashboards gelöscht.">
+                        Zur Simulationsergebnisseite
+                      </button>
+                    {% endif %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                            data-bs-toggle="modal" data-bs-target="#jobSettingsModal-{{ sim.id }}"
+                            title="Zeigt die Einstellungen dieser Simulation an, ohne den Konfigurator-Entwurf zu verändern">
+                      Einstellungen ansehen
+                    </button>
+                    {% if not demo_mode %}
+                      <form method="POST" class="d-flex align-items-center m-0">
+                        <input type="hidden" name="action" value="load_job_settings">
+                        <input type="hidden" name="job_id" value="{{ sim.id }}">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                title="Übernimmt Suchstrategie/Kostenmodell dieser Simulation in den Konfigurator oben - ersetzt den aktuellen Entwurf dort">
+                          Einstellungen laden
+                        </button>
+                      </form>
+                      <form method="POST" class="d-flex align-items-center m-0">
+                        <input type="hidden" name="action" value="delete_completed">
+                        <input type="hidden" name="delete_key" value="{{ sim.deleteKey }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Löschen</button>
+                      </form>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-muted">Noch keine abgeschlossenen Simulationen vorhanden.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# One read-only modal per completed job - peeking here never touches the Konfigurator
+     draft, unlike "Einstellungen laden" above, which explicitly overwrites it. #}
+  {% for sim in completed_simulations %}
+    <div class="modal fade" id="jobSettingsModal-{{ sim.id }}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Einstellungen: {{ sim.title }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-2">
+              <span class="badge text-bg-secondary me-1">Backend-Simulator: {{ sim.algorithm }}</span>
+              {% if sim.runKind == 'fixedfleet' %}
+                <span class="badge text-bg-info me-1">Flotte ohne Suche ausgewertet</span>
+              {% elif sim.searchMode %}
+                <span class="badge text-bg-secondary me-1">
+                  Suchstrategie: {{ 'Adaptive' if sim.searchMode == 'adaptive' else 'Statische' }}
+                </span>
+              {% endif %}
+              {% if sim.useOriginalProTimetable %}
+                <span class="badge text-bg-warning me-1">Pro-Zeitplan: unverändert übernommen</span>
+              {% endif %}
+              {% if sim.runKind != 'fixedfleet' %}
+                {% if sim.budgetEur %}
+                  <span class="badge text-bg-secondary me-1">Budget: {{ '%.0f'|format(sim.budgetEur) }}&nbsp;€</span>
+                {% else %}
+                  <span class="badge text-bg-light border me-1">Budget: kein Limit</span>
+                {% endif %}
+                {% if sim.serviceLevelMin %}
+                  <span class="badge text-bg-secondary me-1">Mindest-Bedienrate: {{ '%.0f'|format(sim.serviceLevelMin * 100) }}&percnt;</span>
+                {% else %}
+                  <span class="badge text-bg-light border me-1">Mindest-Bedienrate: kein Minimum</span>
+                {% endif %}
+              {% endif %}
+              {% if sim.earlyUnchainingEnabled is defined and not sim.earlyUnchainingEnabled %}
+                <span class="badge text-bg-secondary me-1">Early Unchaining: deaktiviert</span>
+              {% endif %}
+              {% if sim.runKind != 'fixedfleet' %}
+                {% if 'total_served' in sim.objectiveTerms %}
+                  <span class="badge text-bg-secondary me-1">Ziel: Bedienrate (erfüllte Fahrten)</span>
+                {% endif %}
+                {% if 'avg_in_vehicle_time_s' in sim.objectiveTerms %}
+                  <span class="badge text-bg-secondary me-1">Ziel: Durchschnittliche Fahrzeit im Fahrzeug</span>
+                {% endif %}
+                {% if 'avg_cost_per_trip_eur' in sim.objectiveTerms %}
+                  <span class="badge text-bg-secondary me-1">Ziel: Durchschnittliche Kosten pro Fahrt</span>
+                {% endif %}
+                {% if 'avg_profit_per_trip_eur' in sim.objectiveTerms %}
+                  <span class="badge text-bg-secondary me-1">Ziel: Durchschnittlicher Gewinn pro Fahrt</span>
+                {% endif %}
+                {% if sim.objectiveTerms|length == 2 %}
+                  <span class="badge text-bg-secondary me-1">Gewichtung (alpha): {{ '%.2f'|format(sim.objectiveWeight) }}</span>
+                {% endif %}
+                <span class="badge text-bg-secondary me-1">Iterationslimit: {{ sim.iterLimit }}</span>
+                <span class="badge text-bg-secondary me-1">Zeitlimit: {{ '%.0f'|format(sim.timeLimit) }}&nbsp;s</span>
+                <span class="badge text-bg-secondary me-1">Start-Cabs: {{ sim.initialCabs }}</span>
+                <span class="badge text-bg-secondary me-1">Cabs/Schritt: {{ sim.cabAddStep }}</span>
+                {% if sim.stagnationTolerance %}
+                  <span class="badge text-bg-secondary me-1">Stagnationstoleranz: {{ '%.2f'|format(sim.stagnationTolerance * 100) }}&percnt;</span>
+                  <span class="badge text-bg-secondary me-1">Plateaulimit: {{ sim.stagnationTolerancePatience }}</span>
+                {% else %}
+                  <span class="badge text-bg-light border me-1">Stagnationstoleranz: aus</span>
+                {% endif %}
+              {% endif %}
+            </div>
+            {% if sim.runKind != 'fixedfleet' and sim.searchMode == 'adaptive' %}
+              <div class="mb-2">
+                <div class="small text-muted text-uppercase mb-1">Parameter für Adaptive Suche</div>
+                <span class="badge text-bg-secondary me-1">Max. Tests je Pro: {{ sim.shrinkProsMaxTries }}</span>
+                <span class="badge text-bg-{{ 'secondary' if sim.shrinkProsAllowRetry else 'light border' }} me-1">
+                  Erneuter Test für gescheiterte Pros: {{ 'an' if sim.shrinkProsAllowRetry else 'aus' }}
+                </span>
+                <span class="badge text-bg-{{ 'secondary' if sim.shrinkProsTrialProbeBelowStart else 'light border' }} me-1">
+                  Geringere Cab-Anzahl mitprüfen: {{ 'an' if sim.shrinkProsTrialProbeBelowStart else 'aus' }}
+                </span>
+                <span class="badge text-bg-{{ 'secondary' if sim.shrinkProsTrialOvershootCorrection else 'light border' }} me-1">
+                  Große Cab-Zuwächse nachträglich prüfen: {{ 'an' if sim.shrinkProsTrialOvershootCorrection else 'aus' }}
+                </span>
+              </div>
+            {% endif %}
+            {# Same fields/labels as the Konfigurator's Kostenmodell table - drives the
+               output-page cost/profit KPIs regardless of runKind, so shown for every job. #}
+            <div class="mb-2">
+              <div class="small text-muted text-uppercase mb-1">Kostenmodell - Fahrzeugpreise &amp; Energie</div>
+              <span class="badge text-bg-light border me-1">Preis pro Cab: {{ '%.2f'|format(sim.cabPrice) }}&nbsp;€</span>
+              <span class="badge text-bg-light border me-1">Preis pro Pro: {{ '%.2f'|format(sim.proPrice) }}&nbsp;€</span>
+              <span class="badge text-bg-light border me-1">Preis pro kWh Netzstrom: {{ '%.4f'|format(sim.stationaryKwhPrice) }}&nbsp;€</span>
+              <span class="badge text-bg-light border me-1">Preis pro kWh Pro-geladen: {{ '%.4f'|format(sim.proKwhPrice) }}&nbsp;€</span>
+            </div>
+            <div class="mb-2">
+              <div class="small text-muted text-uppercase mb-1">Kostenmodell - Abschreibung &amp; Betrieb</div>
+              <span class="badge text-bg-light border me-1">Cab-Nutzungsdauer: {{ sim.cabLifetimeYears }}&nbsp;Jahre</span>
+              <span class="badge text-bg-light border me-1">Pro-Nutzungsdauer: {{ sim.proLifetimeYears }}&nbsp;Jahre</span>
+              <span class="badge text-bg-light border me-1">Zinssatz: {{ sim.interestRatePercent }}&percnt;</span>
+              <span class="badge text-bg-light border me-1">Betriebstage/Jahr: {{ sim.operatingDaysPerYear }}</span>
+            </div>
+            <div class="mb-2">
+              <div class="small text-muted text-uppercase mb-1">Kostenmodell - Fahrpreismodell</div>
+              <span class="badge text-bg-light border me-1">Grundgebühr: {{ '%.2f'|format(sim.fareBaseEur) }}&nbsp;€</span>
+              <span class="badge text-bg-light border me-1">Pro Meter: {{ '%.4f'|format(sim.fareDistanceEurPerM) }}&nbsp;€</span>
+              <span class="badge text-bg-light border me-1">Pro Stunde: {{ '%.2f'|format(sim.fareTimeEurPerHour) }}&nbsp;€</span>
+              <span class="badge text-bg-light border me-1">Mindestfahrpreis: {{ '%.2f'|format(sim.fareMinPerTripEur) }}&nbsp;€</span>
+              <span class="badge text-bg-light border me-1">Tagesabo: {{ '%.2f'|format(sim.fareDailySubscriptionEur) }}&nbsp;€</span>
+            </div>
+            {% set facts = sim.scenarioFacts %}
+            {% if facts %}
+              <div class="small text-muted">
+                Feste Szenario-Vorgaben (gleich in jeder Iteration):
+                <span class="badge text-bg-light border ms-1">{{ facts.numRequests }} Anfragen</span>
+                <span class="badge text-bg-light border ms-1">{{ facts.numProLines }} PRO-Linien</span>
+                <span class="badge text-bg-light border ms-1">{{ facts.numChargingStations }} Ladestationen</span>
+                <span class="badge text-bg-light border ms-1">Zeitfenster {{ facts.timeWindowMin }} min</span>
+                <span class="badge text-bg-light border ms-1">{{ facts.batteryCapacityKwh }} kWh Batteriekapazität</span>
+                <span class="badge text-bg-light border ms-1">{{ facts.chargingPowerKw }} kW Ladeleistung</span>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>

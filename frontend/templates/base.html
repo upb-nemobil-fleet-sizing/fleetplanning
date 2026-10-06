@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}NeMo{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.css') }}" />
+    <link href="{{ url_for('static', filename='vendor/bootstrap-5.3.0/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/material-icons/material-icons.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+    {% include "navbar.html" %}
+
+    <div class="container mt-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap-5.3.0/js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        window.TILE_URL_TEMPLATE = {{ tile_url_template|tojson }};
+        window.TILE_URL_FALLBACK = {{ tile_url_fallback|tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='js/tile_layer.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

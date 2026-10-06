@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <title>Delete Chain Route Schedule</title>
+{% endblock %}
+
+{% block content %}
+    <h2>Delete Chain Route Schedule</h2>
+    <p>Dieses Element wird vollstaendig geloescht. Diese Aktion kann nicht rueckgaengig gemacht werden.</p>
+
+    <ul class="list-group mb-3">
+        <li class="list-group-item">Guid: {{ crs.Guid }}</li>
+        <li class="list-group-item">Chain Route: {{ crs.ChainRoute }}</li>
+        <li class="list-group-item">Pro Schedule: {{ crs.ProSchedule }}</li>
+        <li class="list-group-item">Departure: {{ crs.Departure }}</li>
+        <li class="list-group-item">Arrival: {{ crs.Arrival }}</li>
+    </ul>
+
+    <div id="map" style="height:400px; border:1px solid #ccc;" class="mb-3"></div>
+
+    <form method="POST">
+        <button type="submit" class="btn btn-danger">Endgueltig loeschen</button>
+        <a href="{{ url_for('index') }}{{ nav_context_query or '' }}" class="btn btn-secondary">Abbrechen</a>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/form_maps.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    initChainRouteScheduleMap({
+        mapId: "map",
+        overlay: {{ map_overlay_data|tojson }},
+        mode: "delete",
+        primaryType: "route",
+        fixedChainRouteGuid: "{{ crs.ChainRoute }}"
+    });
+});
+</script>
+{% endblock %}

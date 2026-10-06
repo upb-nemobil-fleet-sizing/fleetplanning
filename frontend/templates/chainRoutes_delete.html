@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <title>Delete Chain Route</title>
+{% endblock %}
+
+{% block content %}
+    <h2>Delete Chain Route</h2>
+    <p>Dieses Element wird vollstaendig geloescht. Diese Aktion kann nicht rueckgaengig gemacht werden.</p>
+
+    <ul class="list-group mb-3">
+        <li class="list-group-item">Guid: {{ route.Guid }}</li>
+        <li class="list-group-item">Start Chaining Location: {{ route.StartLocation }}</li>
+        <li class="list-group-item">End Chaining Location: {{ route.EndLocation }}</li>
+        <li class="list-group-item">
+            Intermediate Chaining Locations:
+            {% if route.IntermediateChainingLocations and route.IntermediateChainingLocations|length > 0 %}
+                {{ route.IntermediateChainingLocations | join(", ") }}
+            {% else %}
+                -
+            {% endif %}
+        </li>
+        <li class="list-group-item">Duration: {{ route.Duration }}</li>
+        <li class="list-group-item">Distance: {{ route.Distance }}</li>
+    </ul>
+
+    <div id="map" style="height:400px; border:1px solid #ccc;" class="mb-3"></div>
+
+    <form method="POST">
+        <button type="submit" class="btn btn-danger">Loeschen</button>
+        <a href="{{ url_for('index') }}{{ nav_context_query or '' }}" class="btn btn-secondary">Abbrechen</a>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/form_maps.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    initChainRouteMap({
+        mapId: "map",
+        overlay: {{ map_overlay_data|tojson }},
+        mode: "delete",
+        primaryType: "route",
+        fixedStartId: "{{ route.StartLocation }}",
+        fixedEndId: "{{ route.EndLocation }}"
+    });
+});
+</script>
+{% endblock %}

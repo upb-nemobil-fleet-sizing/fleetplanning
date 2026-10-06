@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <title>Edit Chain Route Schedule</title>
+{% endblock %}
+
+{% block content %}
+    <h2>Edit Chain Route Schedule - {{ crs.id }}</h2>
+    <form method="POST">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label>Guid</label>
+                    <input type="text" name="Guid" class="form-control" value="{{ crs.Guid }}" required>
+                </div>
+                <div class="mb-3">
+                    <label>Chain Route</label>
+                    <select name="ChainRoute" id="chainRouteSelect" class="form-select" required>
+                        {% for route in chain_routes %}
+                          <option value="{{ route.Guid }}" {% if crs.ChainRoute == route.Guid %}selected{% endif %}>
+                              {{ route.Guid }}
+                          </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Pro Schedule</label>
+                    <select name="ProSchedule" class="form-select" required>
+                        {% for pro in pro_schedules %}
+                          <option value="{{ pro.id }}" {% if crs.ProSchedule == pro.id %}selected{% endif %}>
+                              {{ pro.id }} - {{ pro.label }}
+                          </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label>Departure</label>
+                    <input type="datetime-local" name="Departure" class="form-control" value="{{ crs.Departure.split('+')[0][:16] }}" required>
+                </div>
+                <div class="mb-3">
+                    <label>Arrival</label>
+                    <input type="datetime-local" name="Arrival" class="form-control" value="{{ crs.Arrival.split('+')[0][:16] }}" required>
+                </div>
+            </div>
+        </div>
+
+        <div id="map" style="height:400px; border:1px solid #ccc;" class="mb-3"></div>
+
+        <button type="submit" class="btn btn-primary">Aenderungen speichern</button>
+        <a href="{{ url_for('index') }}{{ nav_context_query or '' }}" class="btn btn-secondary">Abbrechen</a>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/form_maps.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    initChainRouteScheduleMap({
+        mapId: "map",
+        overlay: {{ map_overlay_data|tojson }},
+        mode: "edit",
+        primaryType: "route",
+        chainRouteSelectId: "chainRouteSelect"
+    });
+});
+</script>
+{% endblock %}

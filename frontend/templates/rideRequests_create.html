@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <title>Create Ride Request</title>
+{% endblock %}
+
+{% block content %}
+    <h2>Create Ride Request</h2>
+    {% if error %}
+      <div class="alert alert-danger" role="alert">{{ error }}</div>
+    {% endif %}
+    <form method="POST">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="row mb-3">
+                    <div class="col-md-10">
+                        <label for="start_latitude">Start Latitude</label>
+                        <input type="number" step="0.000001" class="form-control" id="start_latitude" name="start_latitude" required>
+                        <label for="start_longitude">Start Longitude</label>
+                        <input type="number" step="0.000001" class="form-control" id="start_longitude" name="start_longitude" required>
+                    </div>
+                    <div class="col-md-2 mt-4">
+                        <br/>
+                        <button type="button" id="setStartBtn" class="btn btn-outline-primary mt-2">Set Start</button>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-10">
+                        <label for="end_latitude">End Latitude</label>
+                        <input type="number" step="0.000001" class="form-control" id="end_latitude" name="end_latitude" required>
+                        <label for="end_longitude">End Longitude</label>
+                        <input type="number" step="0.000001" class="form-control" id="end_longitude" name="end_longitude" required>
+                    </div>
+                    <div class="col-md-2 mt-4">
+                        <br/>
+                        <button type="button" id="setEndBtn" class="btn btn-outline-primary mt-2">Set End</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="target_start_time">Target Start Time (Optional)</label>
+                            <input type="datetime-local" class="form-control" id="target_start_time" name="target_start_time">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="target_end_time">Target End Time (Optional)</label>
+                            <input type="datetime-local" class="form-control" id="target_end_time" name="target_end_time">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="pickup_start_time">Pickup Start Time (Optional)</label>
+                            <input type="datetime-local" class="form-control" id="pickup_start_time" name="pickup_start_time">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="pickup_end_time">Pickup End Time (Optional)</label>
+                            <input type="datetime-local" class="form-control" id="pickup_end_time" name="pickup_end_time">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="needRamp" name="needRamp">
+                    <label class="form-check-label" for="needRamp">Need Ramp</label>
+                </div>
+            </div>
+
+            <!-- Rechte Seite -->
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label>Requested Adults</label>
+                    <input type="number" name="requestedAdults" value="0" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Requested Childs</label>
+                    <input type="number" name="requestedChilds" value="0" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Luggage</label>
+                    <input type="number" name="luggage" value="0" class="form-control">
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="allowCarpooling" name="allowCarpooling">
+                    <label class="form-check-label" for="allowCarpooling">Allow Carpooling</label>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label>Tolerated Delay Before (min)</label>
+                            <input type="number" name="toleratedDelayBefore" value="0" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label>Tolerated Delay After (min)</label>
+                            <input type="number" name="toleratedDelayAfter" value="0" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label>Simulated Time</label>
+                    <input type="datetime-local" name="SimulatedTime" class="form-control">
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="bookProposal" name="bookProposal">
+                    <label class="form-check-label" for="bookProposal">Book Proposal</label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="createReport" name="createReport">
+                    <label class="form-check-label" for="createReport">Create Report</label>
+                </div>
+            </div>
+        </div>
+
+        <div id="map" style="height: 400px;" class="mb-3"></div>
+
+        <button type="submit" class="btn btn-success">Speichern</button>
+        <a href="{{ url_for('index') }}{{ nav_context_query or '' }}" class="btn btn-secondary">Abbrechen</a>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form_maps.js') }}"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        initDualPointEntityMap({
+            mapId: "map",
+            overlay: {{ map_overlay_data|tojson }},
+            mode: "create",
+            primaryType: "ride",
+            editable: true,
+            startLatInputId: "start_latitude",
+            startLngInputId: "start_longitude",
+            endLatInputId: "end_latitude",
+            endLngInputId: "end_longitude",
+            startButtonId: "setStartBtn",
+            endButtonId: "setEndBtn",
+            lineColor: "#CB2B3E"
+        });
+    });
+    </script>
+{% endblock %}

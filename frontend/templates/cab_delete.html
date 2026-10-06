@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <title>Delete Cab</title>
+{% endblock %}
+
+{% block content %}
+    <h2>Delete Cab</h2>
+    <p>Dieses Element wird vollständig gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+
+    <ul class="list-group mb-3">
+        <li class="list-group-item"><strong>Label:</strong> {{ cab.label }}</li>
+        <li class="list-group-item"><strong>License Plate:</strong> {{ cab.licensePlate }}</li>
+        <li class="list-group-item"><strong>Latitude:</strong> {{ cab.InitialLocation.Latitude }}</li>
+        <li class="list-group-item"><strong>Longitude:</strong> {{ cab.InitialLocation.Longitude }}</li>
+        <li class="list-group-item"><strong>Seats:</strong> {{ cab.seats }}</li>
+        <li class="list-group-item"><strong>Child Seats:</strong> {{ cab.childSeats }}</li>
+        <li class="list-group-item"><strong>Luggage:</strong> {{ cab.luggage }}</li>
+        <li class="list-group-item"><strong>Operating Company:</strong> {{ cab.operatingCompany }}</li>
+        <li class="list-group-item"><strong>Has Ramp:</strong> {{ "Yes" if cab.hasRamp else "No" }}</li>
+        <li class="list-group-item"><strong>Schedule Start:</strong> {{ cab.schedule.StartTime if cab.schedule }}</li>
+        <li class="list-group-item"><strong>Schedule End:</strong> {{ cab.schedule.EndTime if cab.schedule }}</li>
+        <li class="list-group-item">
+            <strong>Power Consumption:</strong>
+            <ul class="list-group mt-2">
+                <li class="list-group-item">Speed: {{ cab.powerConsumption.speed }}</li>
+                <li class="list-group-item">Wind: {{ cab.powerConsumption.wind }}</li>
+                <li class="list-group-item">Load Capacity: {{ cab.powerConsumption.loadCapacity }}</li>
+                <li class="list-group-item">Tire Traction: {{ cab.powerConsumption.tireTraction }}</li>
+                <li class="list-group-item">Weather Conditions: {{ cab.powerConsumption.weatherConditions }}</li>
+                <li class="list-group-item">Climatronic: {{ cab.powerConsumption.climatronic }}</li>
+                <li class="list-group-item">Regenerative Braking: {{ cab.powerConsumption.regenerativeBraking }}</li>
+            </ul>
+        </li>
+        <li class="list-group-item"><strong>Flatrat Energy Consumption:</strong> {{ cab.FlatratEnergyConsumption }}</li>
+        <li class="list-group-item"><strong>Risk:</strong> {{ cab.Risk }}</li>
+        <li class="list-group-item"><strong>Total Energy Capacity:</strong> {{ cab.TotalEnergyCapacity }}</li>
+        <li class="list-group-item"><strong>Initial Energy Capacity:</strong> {{ cab.InitialEnergyCapacity }}</li>
+        <li class="list-group-item"><strong>Max Speed:</strong> {{ cab.maxSpeed }}</li>
+        <li class="list-group-item"><strong>Max Speed Autonomous:</strong> {{ cab.maxSpeedAutonomous }}</li>
+        <li class="list-group-item"><strong>Regenerative Power:</strong> {{ cab.regenerativePower }}</li>
+        <li class="list-group-item"><strong>Maximum Regenerative Power:</strong> {{ cab.maxiumRegenerativePower }}</li>
+        <li class="list-group-item"><strong>Default Energy Consumption per m:</strong> {{ cab.defaultEnergyConsuptionPerM }}</li>
+        <li class="list-group-item"><strong>Vehicle Type:</strong> {{ cab.vehicleType }}</li>
+        <li class="list-group-item"><strong>State of Schedule:</strong> {{ cab.stateOfSchedule }}</li>
+        <li class="list-group-item"><strong>Charging Curve:</strong> {{ cab.chargingCurve[0] if cab.chargingCurve }}</li>
+    </ul>
+
+    <div id="map" style="height:400px; border:1px solid #ccc;" class="mb-3"></div>
+
+    <form method="POST">
+        <button type="submit" class="btn btn-danger">Endgültig löschen</button>
+        <a href="{{ url_for('index') }}{{ nav_context_query or '' }}" class="btn btn-secondary">Abbrechen</a>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form_maps.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            initSinglePointEntityMap({
+                mapId: "map",
+                overlay: {{ map_overlay_data|tojson }},
+                mode: "delete",
+                primaryType: "cab",
+                primaryId: "{{ cab.id }}",
+                editable: false,
+                initialLat: {{ cab.InitialLocation.Latitude }},
+                initialLng: {{ cab.InitialLocation.Longitude }}
+            });
+        });
+    </script>
+{% endblock %}

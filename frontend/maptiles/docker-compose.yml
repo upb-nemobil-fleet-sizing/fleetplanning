@@ -1,0 +1,19 @@
+services:
+  tile-server:
+    # Pinned to one exact build so every machine runs the same image, see "Image version" in README.md.
+    image: overv/openstreetmap-tile-server@sha256:b6a79da39b6d0758368f7c62d22e49dd3ec59e78b194a5ef9dee2723b1f3fa79
+    container_name: nemo-tile-server
+    volumes:
+      - osm-data:/data/database/
+      - osm-tiles:/data/tiles/
+      - ./data/region.osm.pbf:/data/region.osm.pbf:ro
+    environment:
+      THREADS: "8"
+    ports:
+      - "127.0.0.1:8080:80"
+    command: run
+    restart: unless-stopped
+
+volumes:
+  osm-data:
+  osm-tiles:

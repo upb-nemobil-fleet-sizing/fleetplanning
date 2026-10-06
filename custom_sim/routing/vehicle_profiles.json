@@ -1,0 +1,18 @@
+{
+	"cab": {
+		"max_speed_mps": 8.3333333,
+		"energy_per_wh_m": 0.1,
+		"forbid_highways": [],
+		"min_allowed_osm_speed_kph": null,
+		"avoid_highways": {},
+		"global_speed_factor": 1.0
+	},
+	"pro": {
+		"max_speed_mps": 19.444444,
+		"energy_per_wh_m": 0.18,
+		"forbid_highways": [],
+		"min_allowed_osm_speed_mps": null,
+		"avoid_highways": {},
+		"global_speed_factor": 1.0
+	}
+}

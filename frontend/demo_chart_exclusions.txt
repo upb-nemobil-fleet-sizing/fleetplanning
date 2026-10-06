@@ -1,0 +1,25 @@
+# Demo-mode only: KPIs listed here stay visible in the KPI table (if demo_kpis.txt allows them)
+# but are excluded from the chart Y-axis dropdowns, since they make a misleading Pareto/
+# progression chart axis (e.g. collapse to a single dominant point). Non-demo mode is unaffected.
+#
+# Format: one KPI key per active line, "#" for comments.
+#
+# cab_total_customer_trips is here because it is the request total minus rejects, so pairing it
+# against rejects on a chart is close to tautological.
+#
+# dailyVehicleCostEur is excluded too: it's a near-duplicate of dailyFleetCostEur (which is
+# already the recommended cost-axis default) for charting purposes - it exists for table
+# auditability (see project memory), not as a second, competing cost axis.
+#
+# averageCustomerTripCostEur is intentionally NOT excluded (removed 2026-08-06): it's now also
+# the fleet-planning search objective (fleet_planning.py evaluate_solution(), see project
+# memory), so it's exactly the KPI that's expected to vary meaningfully across a search's
+# iterations - the opposite of the "collapses to a single point" reason this file exists for.
+
+profitEur
+totalRevenueEur
+averageProfitPerTripEur
+totalEnergyCostEur
+cab_total_consumed_energy_wh
+cab_total_customer_trips
+dailyVehicleCostEur

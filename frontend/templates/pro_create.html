@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <title>Create Pro</title>
+{% endblock %}
+
+{% block content %}
+    <h2>Create Pro</h2>
+    {% if error %}
+      <div class="alert alert-danger" role="alert">{{ error }}</div>
+    {% endif %}
+    <form method="POST">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="latitude">Latitude</label>
+                    <input type="number" step="0.000001" class="form-control" id="latitude" name="latitude" required>
+                </div>
+                <div class="mb-3">
+                    <label for="longitude">Longitude</label>
+                    <input type="number" step="0.000001" class="form-control" id="longitude" name="longitude" required>
+                </div>
+                <div class="mb-3">
+                    <label>Schedule Start</label>
+                    <input type="datetime-local" name="schedule_start" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Schedule End</label>
+                    <input type="datetime-local" name="schedule_end" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Maximum Cabin Chain</label>
+                    <input type="number" name="MaxCabChain" value="3" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Additional Energy Consumption Per Cab</label>
+                    <input type="number" step="0.01" name="AdditionalEnergyConsumptionPerCab" value="0.1" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Label</label>
+                    <input type="text" name="label" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>License Plate</label>
+                    <input type="text" name="licensePlate" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Flatrat Energy Consumption</label>
+                    <input type="number" step="0.01" name="FlatratEnergyConsumption" value="0.01" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Risk</label>
+                    <input type="number" step="0.01" name="Risk" value="0.0" class="form-control">
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label>Total Energy Capacity</label>
+                    <input type="number" name="TotalEnergyCapacity" value="10000" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Initial Energy Capacity</label>
+                    <input type="number" name="InitialEnergyCapacity" value="10000" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Max Speed</label>
+                    <input type="number" step="1" name="maxSpeed" value="0" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Regenerative Power</label>
+                    <input type="number" step="0.01" name="regenerativePower" value="0" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Operating Company</label>
+                    <input type="text" name="operatingCompany" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Maximum Regenerative Power</label>
+                    <input type="number" step="0.01" name="maxiumRegenerativePower" value="0" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Default Energy Consumption per m</label>
+                    <input type="number" step="0.01" name="defaultEnergyConsuptionPerM" value="0.1" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Vehicle Type</label>
+                    <input type="text" name="vehicleType" value="pro" class="form-control">
+                </div>
+                <div class="mb-4">
+                    <label>State Of Schedule</label>
+                    <select name="stateOfSchedule" class="form-select">
+                        <option value="Planned">Planned</option>
+                        <option value="Delayed">Delayed</option>
+                    </select>
+                </div>
+                <div class="accordion mb-3" id="accordionPower">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingPower">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePower" aria-expanded="false" aria-controls="collapsePower">
+                                Power Consumption Details
+                            </button>
+                        </h2>
+                        <div id="collapsePower" class="accordion-collapse collapse" aria-labelledby="headingPower" data-bs-parent="#accordionPower">
+                            <div class="accordion-body">
+                                <div class="mb-3"><label>Speed</label><input type="number" step="0.01" name="pc_speed" value="0" class="form-control"></div>
+                                <div class="mb-3"><label>Wind</label><input type="number" step="0.01" name="pc_wind" value="0" class="form-control"></div>
+                                <div class="mb-3"><label>Load Capacity</label><input type="number" step="0.01" name="pc_loadCapacity" value="0" class="form-control"></div>
+                                <div class="mb-3"><label>Tire Traction</label><input type="number" step="0.01" name="pc_tireTraction" value="0" class="form-control"></div>
+                                <div class="mb-3"><label>Weather Conditions</label><input type="number" step="0.01" name="pc_weatherConditions" value="0" class="form-control"></div>
+                                <div class="mb-3"><label>Climatronic</label><input type="number" step="0.01" name="pc_climatronic" value="0" class="form-control"></div>
+                                <div class="mb-3"><label>Regenerative Braking</label><input type="number" step="0.01" name="pc_regenerativeBraking" value="0" class="form-control"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="map" style="height: 400px;" class="mb-3"></div>
+        <button type="submit" class="btn btn-success">Speichern</button>
+        <a href="{{ url_for('index') }}{{ nav_context_query or '' }}" class="btn btn-secondary">Abbrechen</a>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form_maps.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            initSinglePointEntityMap({
+                mapId: "map",
+                overlay: {{ map_overlay_data|tojson }},
+                mode: "create",
+                primaryType: "pro",
+                editable: true,
+                latInputId: "latitude",
+                lngInputId: "longitude"
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,57 @@
+{
+	"problem": {
+		"boarding_time": 60,
+		"cs_connect_time": 60
+	},
+	"algorithm": {
+		"max_candidates": 10,
+		"charge_restore_fraction": 0.8,
+		"num_groups": 3,
+		"max_station_candidates_for_right_charging_process": 2,
+		"dropoff_to_station_distance_weight_for_right_charging_process": 0.5,
+		"energy_tolerance_wh": 1e-6,
+		"max_energy_repair_iterations": 1,
+		"max_pro_line_candidates_for_convoy": 1,
+		"charging_replanning": {
+			"enabled": true,
+			"chp_deletion_active_duration_threshold_s": 0
+		},
+		"early_unchaining": {
+			"enabled": true
+		},
+		"cab_live_position_router": {
+			"enabled": false
+		}
+	},
+	"candidate_selection": {
+		"admissibility": [
+			{
+				"metric": "time_customer_in_vehicle_wait_s",
+				"operator": "<=",
+				"value": 300
+			}
+		],
+		"scoring": {
+			"strategy": "weighted_sum",
+			"objectives": [
+				{
+					"metric": "time_customer_in_vehicle_s",
+					"weight": 0.3,
+					"direction": "min",
+					"scale": 1.0
+				},
+				{
+					"metric": "delta_energy_consumption_wh",
+					"weight": 0.7,
+					"direction": "min",
+					"scale": 3.0555555556
+				}
+			]
+		}
+	},
+	"debug": {
+		"request_output_interval": 100,
+		"print_runtime_diagnostics": true,
+		"show_timeline": false
+	}
+}

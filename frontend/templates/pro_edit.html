@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <title>Edit Pro</title>
+{% endblock %}
+
+{% block content %}
+    <h2>Edit Pro - {{ pro.id }}</h2>
+    {% if error %}
+      <div class="alert alert-danger" role="alert">{{ error }}</div>
+    {% endif %}
+    <form method="POST">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="latitude">Latitude</label>
+                    <input type="number" step="0.000001" class="form-control" value="{{ pro.InitialLocation.Latitude }}" id="latitude" name="latitude" required>
+                </div>
+                <div class="mb-3">
+                    <label for="longitude">Longitude</label>
+                    <input type="number" step="0.000001" class="form-control" value="{{ pro.InitialLocation.Longitude }}" id="longitude" name="longitude" required>
+                </div>
+                <div class="mb-3">
+                    <label>Schedule Start</label>
+                    <input type="datetime-local" name="schedule_start" value="{{ pro.schedule.StartTime }}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Schedule End</label>
+                    <input type="datetime-local" name="schedule_end" value="{{ pro.schedule.EndTime }}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Maximum Cabin Chain</label>
+                    <input type="number" name="MaxCabChain" value="{{ pro.MaxCabChain }}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Additional Energy Consumption Per Cab</label>
+                    <input type="number" step="0.01" name="AdditionalEnergyConsumptionPerCab" value="{{ pro.AdditionalEnergyConsumptionPerCab if pro.AdditionalEnergyConsumptionPerCab else ''}}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Label</label>
+                    <input type="text" name="label" value="{{ pro.label }}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>License Plate</label>
+                    <input type="text" name="licensePlate" value="{{ pro.licensePlate }}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Flatrat Energy Consumption</label>
+                    <input type="number" step="0.01" name="FlatratEnergyConsumption" value="{{ pro.FlatratEnergyConsumption }}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Risk</label>
+                    <input type="number" step="0.01" name="Risk" value="{{ pro.Risk }}" class="form-control">
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label>Total Energy Capacity</label>
+                    <input type="number" name="TotalEnergyCapacity" value="{{ pro.TotalEnergyCapacity }}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Initial Energy Capacity</label>
+                    <input type="number" name="InitialEnergyCapacity" value="{{ pro.InitialEnergyCapacity }}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Max Speed</label>
+                    <input type="number" step="1" name="maxSpeed" value="{{ pro.maxSpeed }}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Regenerative Power</label>
+                    <input type="number" step="0.01" name="regenerativePower" value="{{ pro.regenerativePower }}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Operating Company</label>
+                    <input type="text" name="operatingCompany" value="{{ pro.operatingCompany }}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Maximum Regenerative Power</label>
+                    <input type="number" step="0.01" name="maxiumRegenerativePower" value="{{ pro.maxiumRegenerativePower }}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Default Energy Consumption per m</label>
+                    <input type="number" step="0.01" name="defaultEnergyConsuptionPerM" value="{{ pro.defaultEnergyConsuptionPerM }}" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Vehicle Type</label>
+                    <input type="text" name="vehicleType" value="{{ pro.vehicleType }}" class="form-control">
+                </div>
+                <div class="mb-4">
+                    <label>State Of Schedule</label>
+                    <select name="stateOfSchedule" class="form-select">
+                        <option value="Planned" {% if pro.stateOfSchedule == "Planned" %}selected{% endif %}>Planned</option>
+                        <option value="Delayed" {% if pro.stateOfSchedule == "Delayed" %}selected{% endif %}>Delayed</option>
+                    </select>
+                </div>
+                <div class="accordion mb-3" id="accordionPower">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingPower">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePower" aria-expanded="false" aria-controls="collapsePower">
+                                Power Consumption Details
+                            </button>
+                        </h2>
+                        <div id="collapsePower" class="accordion-collapse collapse" aria-labelledby="headingPower" data-bs-parent="#accordionPower">
+                            <div class="accordion-body">
+                                <div class="mb-3"><label>Speed</label><input type="number" step="0.01" name="pc_speed" value="{{ pro.powerConsumption.speed }}" class="form-control"></div>
+                                <div class="mb-3"><label>Wind</label><input type="number" step="0.01" name="pc_wind" value="{{ pro.powerConsumption.wind }}" class="form-control"></div>
+                                <div class="mb-3"><label>Load Capacity</label><input type="number" step="0.01" name="pc_loadCapacity" value="{{ pro.powerConsumption.loadCapacity }}" class="form-control"></div>
+                                <div class="mb-3"><label>Tire Traction</label><input type="number" step="0.01" name="pc_tireTraction" value="{{ pro.powerConsumption.tireTraction }}" class="form-control"></div>
+                                <div class="mb-3"><label>Weather Conditions</label><input type="number" step="0.01" name="pc_weatherConditions" value="{{ pro.powerConsumption.weatherConditions }}" class="form-control"></div>
+                                <div class="mb-3"><label>Climatronic</label><input type="number" step="0.01" name="pc_climatronic" value="{{ pro.powerConsumption.climatronic }}" class="form-control"></div>
+                                <div class="mb-3"><label>Regenerative Braking</label><input type="number" step="0.01" name="pc_regenerativeBraking" value="{{ pro.powerConsumption.regenerativeBraking }}" class="form-control"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="map" style="height: 400px;" class="mb-3"></div>
+        <button type="submit" class="btn btn-primary">Änderungen speichern</button>
+        <a href="{{ url_for('index') }}{{ nav_context_query or '' }}" class="btn btn-secondary">Abbrechen</a>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form_maps.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            initSinglePointEntityMap({
+                mapId: "map",
+                overlay: {{ map_overlay_data|tojson }},
+                mode: "edit",
+                primaryType: "pro",
+                primaryId: "{{ pro.id }}",
+                editable: true,
+                latInputId: "latitude",
+                lngInputId: "longitude",
+                initialLat: {{ pro.InitialLocation.Latitude }},
+                initialLng: {{ pro.InitialLocation.Longitude }}
+            });
+        });
+    </script>
+{% endblock %}

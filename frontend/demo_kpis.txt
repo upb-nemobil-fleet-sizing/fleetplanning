@@ -1,0 +1,80 @@
+# Optional demo KPI allow-list for the Simulationsergebnisse page.
+#
+# Format:
+# one KPI key per active line
+#
+# Lines starting with "#" are comments. Inline comments after "#" are ignored.
+# If this file is missing, empty, or contains only comments, all currently
+# available KPIs remain visible.
+#
+# To reduce the visible demo KPIs, uncomment only the keys that should remain
+# selectable in the Y-axis dropdowns. The X-axis "numCabs" is always kept.
+#
+# Curation principle (re-done 2026-08-04, see project memory for the "too many
+# totals, too few averages" discussion): raw totals (sums of distance/time/
+# energy/counts) mostly just track fleet size or fulfilled-request volume, so
+# comparing two of them rarely reveals anything a human wouldn't already infer
+# from numCabs/rejects - they're kept commented for reference but not
+# surfaced. Ratios/averages/outcome metrics that normalize away scale (and
+# therefore can show a genuine efficiency difference between iterations) are
+# kept active.
+#
+# Exception (added 2026-08-05): a raw total that's a direct input to an active
+# derived KPI stays active too, even though it "just tracks fleet size" on its
+# own - hiding it would make the derived number unauditable. cab_total_
+# customer_trips is the one case of this today (it's the shared denominator
+# of averageCustomerTripCostEur/averageProfitPerTripEur).
+
+rejects  # Number of Rejects
+rejectionRate  # Rejection Rate
+cab_number_of_used_cabs  # Number of Used Cabs
+cab_total_customer_trips  # Total Customer Trips  -- shared denominator of averageCustomerTripCostEur/averageProfitPerTripEur; kept visible so those derived KPIs are auditable
+# cab_short_customer_trips  # Short Customer Trips (< 3000 m)
+# cab_total_customer_distance_m  # Total Customer Distance (m)
+# cab_total_customer_distance_with_pro_m  # Customer Distance With PRO Support (m)
+# cab_total_customer_distance_without_pro_m  # Customer Distance Without PRO Support (m)
+# cab_total_customer_in_vehicle_time_s  # Total Customer In-Vehicle Time (s)
+# cab_total_customer_consumed_energy_wh  # Customer Consumed Energy (Wh)
+# cab_total_customer_service_time_s  # Total Customer Service Time (s)
+# cab_total_empty_pickup_distance_m  # Total Empty Pickup Distance (m)
+# cab_total_empty_reposition_distance_m  # Total Empty Reposition Distance (m)
+# cab_total_empty_service_time_s  # Total Empty Service Time (s)
+# cab_total_empty_pickup_time_s  # Total Empty Pickup Time (s)
+# cab_total_empty_reposition_time_s  # Total Empty Reposition Time (s)
+# cab_total_empty_reposition_trips  # Total Empty Reposition Trips
+# cab_total_charging_access_distance_m  # Total Charging Access Distance (m)
+# cab_total_charging_access_time_s  # Total Charging Access Time (s)
+# cab_total_charging_access_consumed_energy_wh  # Charging Access Consumed Energy (Wh)
+# cab_total_charging_stationary_time_s  # Total Charging Stationary Time (s)
+# cab_total_charging_events  # Total Charging Events
+# cab_total_stationary_charging_energy_wh  # Stationary Charged Energy (Wh)
+# cab_total_pro_charging_energy_wh  # PRO Charged Energy (Wh)
+cab_total_consumed_energy_wh  # Total Consumed Energy (Wh)
+# cab_total_vehicle_distance_m  # Total Vehicle Distance (m)
+# cab_total_vehicle_driving_time_s  # Total Vehicle Driving Time (s)
+# cab_total_vehicle_service_time_s  # Total Vehicle Service Time (s)
+# cab_total_vehicle_operating_time_s  # Total Vehicle Operating Time (s)
+# cab_total_charging_energy_wh  # Total Charged Energy (Wh)  -- superseded in spirit by dailyFleetCostEur
+# cab_longest_customer_trip_distance_m  # Longest Customer Trip Distance (m)
+cab_customer_vs_empty_ratio  # Customer vs Empty Distance Ratio
+cab_pro_charging_ratio  # PRO Charging Ratio
+# pro_number_of_pros  # Number of PRO Vehicles  -- shown via the composition badge instead
+pro_number_of_active_pros  # Number of Active PRO Vehicles
+# pro_total_chaining_events  # Total Chaining Trips
+pro_total_chained_cabs  # Total Chained Cabs
+# pro_total_chaining_distance_m  # Total Chaining Distance (m)
+# pro_total_chaining_driving_time_s  # Total Chaining Driving Time (s)
+# pro_total_chaining_service_time_s  # Total Chaining Service Time (s)
+# pro_total_charged_energy_wh  # Total PRO Charged Energy (Wh)
+averageUtilization  # Average Utilization
+# Ordered to read as the arithmetic it represents: vehicle investment + energy = fleet cost;
+# revenue - fleet cost = profit; per-trip figures last. Only dailyVehicleCostEur is purely
+# amortized (one-time price spread over years) - everything below it blends that with same-day
+# totals, so the breakdown row is the explanation, not a label suffix repeated on every KPI.
+dailyVehicleCostEur  # Daily Vehicle Cost (EUR, amortized)
+totalEnergyCostEur  # Total Energy Cost (EUR)
+dailyFleetCostEur  # Daily Fleet Cost (EUR)
+totalRevenueEur  # Total Trip Revenue (EUR)
+profitEur  # Daily Profit (EUR)
+averageCustomerTripCostEur  # Average Customer Trip Cost (EUR)
+averageProfitPerTripEur  # Average Profit per Trip (EUR)

@@ -1,0 +1,39 @@
+{
+	"build": {
+		"source": {
+			"osm_source_path": "data/detmold-regbez-260511.osm.pbf"
+		},
+		"graph": {
+			"network_type": "drive_service",
+			"keep_only_largest_strong_component": true
+		},
+		"speed_model": {
+			"cap_explicit_speeds_with_practical_model": false,
+			"cap_explicit_speeds_with_strong_practical_tags": true
+		}
+	},
+	"runtime": {
+		"routing": {
+			"default_precise_mode": "fast"
+		},
+		"od": {
+			"enabled_by_default": true,
+			"enabled_for": {
+				"cab": true,
+				"pro": false
+			},
+			"max_nodes": 10000,
+			"cache": {
+				"backend": "numpy"
+			}
+		},
+		"route_result_cache": {
+			"enabled": true,
+			"max_entries": 40000,
+			"enabled_for": {
+				"cab": true,
+				"pro": false
+			}
+		}
+	}
+}

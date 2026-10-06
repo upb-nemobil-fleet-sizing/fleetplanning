@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <title>Delete Ride Request</title>
+{% endblock %}
+
+{% block content %}
+    <h2>Delete Ride Request</h2>
+    <p>Dieses Element wird vollständig gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+    <ul class="list-group mb-3">
+        <li class="list-group-item">Start-Latitude: {{ req.CurrentLocation.Latitude }}</li>
+        <li class="list-group-item">Start-Longitude: {{ req.CurrentLocation.Longitude }}</li>
+        <li class="list-group-item">Ziel-Latitude: {{ req.TargetLocation.Latitude }}</li>
+        <li class="list-group-item">Ziel-Longitude: {{ req.TargetLocation.Longitude }}</li>
+        <li class="list-group-item">Pickup: {{ req.pickupTime.StartTime }} - {{ req.pickupTime.EndTime }}</li>
+        <li class="list-group-item">Target: {{ req.targetTime.StartTime }} - {{ req.targetTime.EndTime }}</li>
+    </ul>
+
+    <div id="map" style="height:400px; border:1px solid #ccc;" class="mb-3"></div>
+
+    <form method="POST">
+        <button type="submit" class="btn btn-danger">Löschen</button>
+        <a href="{{ url_for('index') }}{{ nav_context_query or '' }}" class="btn btn-secondary">Abbrechen</a>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form_maps.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            initDualPointEntityMap({
+                mapId: "map",
+                overlay: {{ map_overlay_data|tojson }},
+                mode: "delete",
+                primaryType: "ride",
+                editable: false,
+                startLat: {{ req.CurrentLocation.Latitude }},
+                startLng: {{ req.CurrentLocation.Longitude }},
+                endLat: {{ req.TargetLocation.Latitude }},
+                endLng: {{ req.TargetLocation.Longitude }},
+                lineColor: "#CB2B3E"
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <title>Delete Pro</title>
+{% endblock %}
+
+{% block content %}
+    <h2>Delete Pro</h2>
+    <p>Dieses Element wird vollständig gelöscht. Diese Aktion kann nicht Rückgängig gemacht werden.</p>
+    
+    <ul class="list-group mb-3">
+        <li class="list-group-item"><strong>ID:</strong> {{ pro.id }}</li>
+        <li class="list-group-item"><strong>Schedule Start:</strong> {{ pro.schedule.StartTime }}</li>
+        <li class="list-group-item"><strong>Schedule End:</strong> {{ pro.schedule.EndTime }}</li>
+        <li class="list-group-item">
+            <strong>Power Consumption:</strong>
+            <ul class="list-group mt-2">
+                <li class="list-group-item">Speed: {{ pro.powerConsumption.speed }}</li>
+                <li class="list-group-item">Wind: {{ pro.powerConsumption.wind }}</li>
+                <li class="list-group-item">Load Capacity: {{ pro.powerConsumption.loadCapacity }}</li>
+                <li class="list-group-item">Tire Traction: {{ pro.powerConsumption.tireTraction }}</li>
+                <li class="list-group-item">Weather Conditions: {{ pro.powerConsumption.weatherConditions }}</li>
+                <li class="list-group-item">Climatronic: {{ pro.powerConsumption.climatronic }}</li>
+                <li class="list-group-item">Regenerative Braking: {{ pro.powerConsumption.regenerativeBraking }}</li>
+            </ul>
+        </li>
+        <li class="list-group-item"><strong>Latitude:</strong> {{ pro.InitialLocation.Latitude }}</li>
+        <li class="list-group-item"><strong>Longitude:</strong> {{ pro.InitialLocation.Longitude }}</li>
+        <li class="list-group-item"><strong>Max Cabin Chain:</strong> {{ pro.MaxCabChain }}</li>
+        <li class="list-group-item"><strong>Additional Energy Consumption Per Cab:</strong> {{ pro.AdditionalEnergyConsumptionPerCab }}</li>
+        <li class="list-group-item"><strong>Label:</strong> {{ pro.label }}</li>
+        <li class="list-group-item"><strong>License Plate:</strong> {{ pro.licensePlate }}</li>
+        <li class="list-group-item"><strong>Flatrat Energy Consumption:</strong> {{ pro.FlatratEnergyConsumption }}</li>
+        <li class="list-group-item"><strong>Risk:</strong> {{ pro.Risk }}</li>
+        <li class="list-group-item"><strong>Total Energy Capacity:</strong> {{ pro.TotalEnergyCapacity }}</li>
+        <li class="list-group-item"><strong>Initial Energy Capacity:</strong> {{ pro.InitialEnergyCapacity }}</li>
+        <li class="list-group-item"><strong>Max Speed:</strong> {{ pro.maxSpeed }}</li>
+        <li class="list-group-item"><strong>Max Speed Autonomous:</strong> {{ pro.maxSpeedAutonomous }}</li>
+        <li class="list-group-item"><strong>Regenerative Power:</strong> {{ pro.regenerativePower }}</li>
+        <li class="list-group-item"><strong>Maximum Regenerative Power:</strong> {{ pro.maxiumRegenerativePower }}</li>
+        <li class="list-group-item"><strong>Default Energy Consumption per m:</strong> {{ pro.defaultEnergyConsuptionPerM }}</li>
+        <li class="list-group-item"><strong>Operating Company:</strong> {{ pro.operatingCompany }}</li>
+        <li class="list-group-item"><strong>Vehicle Type:</strong> {{ pro.vehicleType }}</li>
+        <li class="list-group-item"><strong>State Of Schedule:</strong> {{ pro.stateOfSchedule }}</li>
+    </ul>
+
+    <div id="map" style="height: 400px;" class="mb-3"></div>
+    <form method="POST">
+        <button type="submit" class="btn btn-danger">Endgültig löschen</button>
+        <a href="{{ url_for('index') }}{{ nav_context_query or '' }}" class="btn btn-secondary">Abbrechen</a>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form_maps.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            initSinglePointEntityMap({
+                mapId: "map",
+                overlay: {{ map_overlay_data|tojson }},
+                mode: "delete",
+                primaryType: "pro",
+                primaryId: "{{ pro.id }}",
+                editable: false,
+                initialLat: {{ pro.InitialLocation.Latitude }},
+                initialLng: {{ pro.InitialLocation.Longitude }}
+            });
+        });
+    </script>
+{% endblock %}

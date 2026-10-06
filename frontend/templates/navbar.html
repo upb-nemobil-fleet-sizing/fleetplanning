@@ -1,0 +1,42 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="{{ url_for('landing_page') }}">NeMo.bil Dashboard</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        {# nav_context_query (whichever scenario/job the CURRENT page is about) is appended to
+           every link here, uniformly - not just the ones a given route happens to read - so
+           passing through any one of these pages on the way somewhere else never silently
+           drops the context for the next hop. See _nav_context_query()'s docstring. #}
+        {% set on_output = request.endpoint and request.endpoint.startswith('output') %}
+        <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'upload_page' }}" {% if request.endpoint == 'upload_page' %}aria-current="page"{% endif %} href="{{ url_for('upload_page') }}{{ nav_context_query or '' }}">{{ 'Szenarien' if demo_mode else 'Daten-Upload' }}</a></li>
+        {% if demo_mode %}
+        <li class="nav-item"><a class="nav-link {{ 'active' if on_output }}" {% if on_output %}aria-current="page"{% endif %} href="{{ url_for('output_page') }}{{ nav_context_query or '' }}">Simulationsergebnisse</a></li>
+        {% else %}
+        <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'index' }}" {% if request.endpoint == 'index' %}aria-current="page"{% endif %} href="{{ url_for('index') }}{{ nav_context_query or '' }}">{{ 'Übersicht' if demo_mode else 'Szenario-Konfigurator' }}</a></li>
+        <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'simulation_overview' }}" {% if request.endpoint == 'simulation_overview' %}aria-current="page"{% endif %} href="{{ url_for('simulation_overview') }}{{ nav_context_query or '' }}">Simulationen</a></li>
+        <li class="nav-item"><a class="nav-link {{ 'active' if on_output }}" {% if on_output %}aria-current="page"{% endif %} href="{{ url_for('output_page') }}{{ nav_context_query or '' }}">Simulationsergebnisse</a></li>
+        {% endif %}
+      </ul>
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item d-flex align-items-center">
+          <a class="navbar-partner-link" href="https://www.uni-paderborn.de/" target="_blank" aria-label="Zur Website der Universitaet Paderborn">
+            <img src="{{ url_for('static', filename='images/UPB_Logo_DE_vierfarbig_RGB.svg') }}" alt="Universitaet Paderborn" class="navbar-partner-logo">
+          </a>
+        </li>
+        <li class="nav-item d-flex align-items-center">
+          <a class="navbar-partner-link" href="https://www.sicp.de/" target="_blank" aria-label="Zur Website des SICP">
+            <img src="{{ url_for('static', filename='images/sicp2024.png') }}" alt="SICP" class="navbar-partner-logo">
+          </a>
+        </li>
+        <li class="nav-item d-flex align-items-center">
+          <a class="navbar-partner-link" href="https://www.bundeswirtschaftsministerium.de/Navigation/DE/Home/home.html" target="_blank" aria-label="Zur Website des BMWE">
+            <img src="{{ url_for('static', filename='images/BMWE2025_NextGenEU_web.png') }}" alt="Bundesministerium für Wirtschaft und Energie" class="navbar-partner-logo">
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

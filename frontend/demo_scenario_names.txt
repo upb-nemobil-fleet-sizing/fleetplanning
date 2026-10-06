@@ -1,0 +1,23 @@
+# Selects which discovered scenarios appear in demo mode, and optionally their display name.
+# This is an allow-list: a scenario not listed here does not show up at all, regardless of what
+# real output folders exist - list only the ones worth showing a demo visitor.
+#
+# Format, one entry per active line - the left side is the generated scenario prefix:
+# scenario_prefix                                  (select, keep the generated title)
+# scenario_prefix = Display title                  (select, with this title)
+# scenario_prefix = Display title | Optional summary
+#
+# If this file is missing, or has no active (uncommented) lines, every discovered scenario shows
+# with its generated fallback title instead - the unconfigured default.
+#
+# A prefix can legitimately exist in more than one output folder (the same instance data run
+# under different search settings, or evaluated as a fixed fleet) - a listed prefix matching more
+# than one folder shows all of them, not just one. Keep the output folders you actually deploy
+# for demo mode free of that (e.g. no leftover fixedfleet/test runs sharing a prefix with a real
+# scenario) rather than relying on this file to disambiguate.
+
+hx_3cs_2lines_10bc_11cp_221rq_120tw = Höxter: 2 Konvoi-Linien | 3 Ladepunkte, 221 Fahranfragen, 120-Minuten-Zeitfenster
+pb_3cs_0lines_10bc_11cp_1095rq_30tw = Paderborn: 0 Konvoi-Linien | 3 Ladepunkte, 1095 Fahranfragen, 30-Minuten-Zeitfenster
+pb_3cs_4lines_10bc_11cp_1095rq_30tw = Paderborn: 4 Konvoi-Linien | 3 Ladepunkte, 1095 Fahranfragen, 30-Minuten-Zeitfenster
+pb_3cs_4lines_20bc_22cp_2202rq_60tw = Paderborn: 4 Konvoi-Linien | 3 Ladepunkte, 2202 Fahranfragen, 60-Minuten-Zeitfenster
+pb_3cs_2lines_10bc_11cp_344rq_10tw = Paderborn: 2 Konvoi-Linien | 3 Ladepunkte, 344 Fahranfragen, 10-Minuten-Zeitfenster

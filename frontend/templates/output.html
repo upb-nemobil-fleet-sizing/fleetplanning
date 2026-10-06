@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block head %}
+  <meta charset="UTF-8">
+  <title>Output - Simulationsergebnisse</title>
+  <script src="{{ url_for('static', filename='vendor/plotly-2.33.0/plotly.min.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+  <h1 class="mb-4 text-center">Simulationsergebnisse</h1>
+  <div id="loadingOverlay" class="alert alert-warning text-center shadow-sm" role="alert" style="position:fixed; top:20px; left:50%; transform:translateX(-50%);
+              z-index:1050; display:none; min-width:280px;">
+    <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+    <span id="loadingOverlayText">Daten werden geladen …</span>
+  </div>
+  {% if request.args.get('notice') == 'input_loaded' %}
+    <div class="alert alert-success" role="alert">
+      Eingabedaten der gewählten Iteration wurden als Basis-/Fahrtdaten übernommen - der bisherige
+      Entwurf wurde dabei ersetzt. <a href="{{ url_for('upload_page') }}{{ nav_context_query or '' }}" class="alert-link">Auf der Daten-Upload-Seite prüfen</a>
+    </div>
+  {% elif request.args.get('notice') == 'load_input_invalid' %}
+    <div class="alert alert-warning" role="alert">
+      Für die gewählte Iteration konnten keine gespeicherten Eingabedaten gefunden werden.
+    </div>
+  {% endif %}
+  {% if job_counters_mismatch %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      Die Anzahl der Job-Ordner in dashboard_jobs stimmt nicht mit der erwarteten Anzahl überein.
+      Vermutlich wurde dort von Hand ein Ordner gelöscht oder hinzugefügt.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endif %}
+  {% if selected_simulation %}
+    <div class="alert alert-info" role="alert">
+      Ausgewaehlte Simulation: <strong>{{ selected_simulation.title }}</strong>
+      <span class="ms-2 text-muted">({{ selected_simulation.detail }})</span>
+      {% if selected_simulation.searchMode %}
+        <span class="badge text-bg-secondary ms-2">
+          Suchstrategie: {{ 'Adaptive' if selected_simulation.searchMode == 'adaptive' else 'Statische' }}
+        </span>
+      {% endif %}
+      {% if selected_simulation.useOriginalProTimetable %}
+        <span class="badge text-bg-warning ms-2">Pro-Zeitplan: unverändert übernommen</span>
+      {% endif %}
+      {% if selected_simulation.budgetEur %}
+        <span class="badge text-bg-secondary ms-2">Budget: {{ '%.0f'|format(selected_simulation.budgetEur) }}&nbsp;€</span>
+      {% endif %}
+      {% if selected_simulation.serviceLevelMin %}
+        <span class="badge text-bg-secondary ms-2">Mindest-Bedienrate: {{ '%.0f'|format(selected_simulation.serviceLevelMin * 100) }}&percnt;</span>
+      {% endif %}
+      {% if selected_simulation.earlyUnchainingEnabled is defined and not selected_simulation.earlyUnchainingEnabled %}
+        <span class="badge text-bg-secondary ms-2">Early Unchaining: deaktiviert</span>
+      {% endif %}
+      {% if selected_simulation.iterLimit %}
+        <span class="badge text-bg-secondary ms-2">Iterationslimit: {{ selected_simulation.iterLimit }}</span>
+      {% endif %}
+      {% if selected_simulation.timeLimit %}
+        <span class="badge text-bg-secondary ms-2">Zeitlimit: {{ '%.0f'|format(selected_simulation.timeLimit) }}&nbsp;s</span>
+      {% endif %}
+      {% if selected_simulation.initialCabs %}
+        <span class="badge text-bg-secondary ms-2">Start-Cabs: {{ selected_simulation.initialCabs }}</span>
+      {% endif %}
+      {% if selected_simulation.cabAddStep %}
+        <span class="badge text-bg-secondary ms-2">Cabs/Schritt: {{ selected_simulation.cabAddStep }}</span>
+      {% endif %}
+      {% set facts = selected_simulation.scenarioFacts %}
+      {% if facts %}
+        <div class="mt-2 small text-muted">
+          Feste Szenario-Vorgaben (gleich in jeder Iteration):
+          <span class="badge text-bg-light border ms-1">{{ facts.numRequests }} Anfragen</span>
+          <span class="badge text-bg-light border ms-1">{{ facts.numProLines }} PRO-Linien</span>
+          <span class="badge text-bg-light border ms-1">{{ facts.numChargingStations }} Ladestationen</span>
+          <span class="badge text-bg-light border ms-1">Zeitfenster {{ facts.timeWindowMin }} min</span>
+          <span class="badge text-bg-light border ms-1">{{ facts.batteryCapacityKwh }} kWh Batteriekapazität</span>
+          <span class="badge text-bg-light border ms-1">{{ facts.chargingPowerKw }} kW Ladeleistung</span>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+  {% if demo_mode and demo_scenarios %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <form method="GET">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-8">
+              <label class="form-label" for="demo_scenario">Szenario</label>
+              <select class="form-select" id="demo_scenario" name="demo_scenario">
+                {% for scenario in demo_scenarios %}
+                  <option value="{{ scenario.id }}" {% if selected_demo_scenario and selected_demo_scenario.id == scenario.id %}selected{% endif %}>
+                    {{ scenario.title }} [{{ 'Adaptive' if scenario.searchMode == 'adaptive' else 'Statische' }}]
+                  </option>
+                {% endfor %}
+              </select>
+              <input type="hidden" name="cab_price" value="{{ demo_price_values.cab_price }}">
+              <input type="hidden" name="pro_price" value="{{ demo_price_values.pro_price }}">
+              <input type="hidden" name="stationary_kwh_price" value="{{ demo_price_values.stationary_kwh_price }}">
+            </div>
+            <div class="col-md-4 d-grid pt-md-4">
+              <button type="submit" class="btn btn-outline-primary">Szenario wechseln</button>
+            </div>
+          </div>
+          <div class="form-text mt-2">
+            Kostenannahmen: Cab {{ demo_price_values.cab_price }} EUR, Pro {{ demo_price_values.pro_price }} EUR, kWh (stationär) {{ demo_price_values.stationary_kwh_price }} EUR.
+          </div>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Upload -->
+  {% if not demo_mode %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">Simulationsergebnisse hochladen (Ordner / Mehrfach)</h5>
+
+      <div class="alert alert-warning py-2 px-3 mb-3 small" role="alert">
+        Iterationen werden nur anhand des Dateinamens gruppiert, nicht inhaltlich geprüft. Stammen
+        zwei gleich benannte Iterationen aus unterschiedlichen Läufen, fällt das nicht automatisch
+        auf. Für die Richtigkeit der hochgeladenen Daten sind Sie selbst verantwortlich. Der Upload
+        übernimmt außerdem nur Kennzahlen: Basis-/Fahrtdaten landen erst im Konfigurator, wenn unten
+        "Als Eingabedaten laden" gedrückt wird.
+      </div>
+
+      <div class="mb-2" id="folderUploadDropzone">
+        <input type="file" id="folderUpload" multiple webkitdirectory directory class="form-control" accept=".json">
+        <div class="form-text">
+          Wähle den Ordner mit den <code>input_base_file_*.json</code>, <code>input_req_file_*.json</code>,
+          <code>output_cab_*.json</code>, <code>output_sim_*.json</code> und <code>output_pro_*.json</code> Dateien
+          (alle fünf pro Iteration nötig) oder markiere mehrere Dateien. Optional dazu:
+          <code>past_entries_fleet_*.json</code> und <code>request_results_log_*.json</code>. Einzelne oder
+          mehrere Dateien können auch per Drag-and-drop hier abgelegt werden, das wählt sie nur aus
+          (wie im Dateidialog). Hochgeladen wird erst über den Button unten.
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-primary" id="btnUploadAuto">Alle passenden Dateien hochladen</button>
+        <button type="button" class="btn btn-outline-secondary" id="btnScanList">Dateiliste anzeigen</button>
+      </div>
+
+      <div id="uploadDebug" class="small mt-2 text-muted" style="white-space:pre-wrap;"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Charts -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">Chart</h5>
+      <div class="row g-3 align-items-end">
+   
+        <div class="col-md-3" hidden>
+          <label class="form-label">Datensatz</label>
+          <select id="dataset" class="form-select">
+            <option value="sim">Simulation (output_sim_*.json)</option>
+            <option value="cab">Cab-Output (output_cab_*.json)</option>
+            <option value="paired" selected>Paired (SIM ↔ CAB)</option>
+          </select>
+        </div>
+
+        <div class="col-md-3" hidden>
+          <label class="form-label">Runs (Mehrfachauswahl)</label>
+          <div class="form-text">Strg/Shift für Mehrfach-Auswahl.</div>
+          <select id="runSelect" class="form-select" multiple size="4"></select>
+        </div>
+
+        <div class="col-md-2" hidden>
+          <label class="form-label">X-Achse</label>
+          <select id="xVar" class="form-select"></select>
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label">Y1-Achse</label>
+          <select id="yVar" class="form-select"></select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Y2-Achse (optional)</label>
+          <select id="yVar2" class="form-select"></select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Ansicht</label>
+          <select id="chartView" class="form-select">
+            <option value="progression" selected>Progression (Cabs)</option>
+            <option value="pareto">Pareto-Front (Y1 vs Y2)</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="chartMain" class="mt-4" style="height:560px;"></div>
+      {% if not demo_mode %}
+      <div id="chartUtil" class="mt-4" style="height:320px;"></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Fleet/Iteration Summary -->
+  <div class="card mb-3" id="fleetSummaryCard" hidden>
+    <div class="card-body">
+      <h5 class="card-title">Flotten-Details</h5>
+      {# "Details öffnen" lives entirely in the KPI table header below (one column per chosen
+         iteration) instead of a separate button that meant different things depending on
+         whether one or two iterations were picked - see renderFleetSummary(). "Als
+         Eingabedaten laden" stays here, one per dropdown, since it's about a single chosen
+         iteration's own input data, not about the compared KPI values. #}
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <label class="form-label" for="fleetSelect">Flotte / Iteration auswählen</label>
+          <select id="fleetSelect" class="form-select"></select>
+          {% if not demo_mode and sim_job_id %}
+            <form method="POST" action="{{ url_for('load_iteration_input') }}" id="loadIterationInputFormA" class="mt-2">
+              <input type="hidden" name="sim_job_id" value="{{ sim_job_id }}">
+              <input type="hidden" name="iteration" id="loadIterationInputIterationA" value="">
+              <button type="submit" class="btn btn-sm btn-outline-secondary" id="btnLoadIterationInputA" disabled
+                      title="Übernimmt die Flotte/Fahrtanfragen dieser Iteration als Basis-/Fahrtdaten - ersetzt den aktuellen Entwurf auf der Daten-Upload-Seite">
+                Als Eingabedaten laden
+              </button>
+            </form>
+          {% endif %}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="fleetCompareSelect">Vergleichen mit (optional)</label>
+          <select id="fleetCompareSelect" class="form-select">
+            <option value="">– kein Vergleich –</option>
+          </select>
+          {% if not demo_mode and sim_job_id %}
+            <form method="POST" action="{{ url_for('load_iteration_input') }}" id="loadIterationInputFormB" class="mt-2">
+              <input type="hidden" name="sim_job_id" value="{{ sim_job_id }}">
+              <input type="hidden" name="iteration" id="loadIterationInputIterationB" value="">
+              <button type="submit" class="btn btn-sm btn-outline-secondary" id="btnLoadIterationInputB" disabled
+                      title="Übernimmt die Flotte/Fahrtanfragen dieser Iteration als Basis-/Fahrtdaten - ersetzt den aktuellen Entwurf auf der Daten-Upload-Seite">
+                Als Eingabedaten laden
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+      <div id="fleetCompositionBadges" class="mb-3"></div>
+      <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle mb-0" id="fleetSummaryTable">
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-3 row">
+    <div class="col-md-6">
+      {# ?locked=1 is index()'s own read-only flag, actually read this time - a much earlier
+         version used mode=readonly, a param index() never read at all, silently opening the
+         fully editable page while labeled "read-only". #}
+      <a class="btn btn-outline-secondary" href="{{ (url_for('upload_page') + output_data_query) if demo_mode and selected_demo_scenario else url_for('index', locked=1) + (nav_context_query or '')|replace('?', '&', 1) }}">
+        {{ 'Zur Szenarioauswahl' if demo_mode else 'Zur Read-Only Seite' }}
+      </a>
+    </div>
+    {% if not demo_mode %}
+    <div class="col-md-6 d-flex justify-content-end">
+      <button type="button" class="btn btn-outline-danger" onClick="window.location.reload();" id="btnReset">Hochgeladene Daten entfernen</button>
+    </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    window.outputDataQuery = {{ (output_data_query or '')|tojson }};
+    window.demoMode = {{ 'true' if demo_mode else 'false' }};
+  </script>
+  <script src="{{ url_for('static', filename='js/output.js') }}"></script>
+{% endblock %}

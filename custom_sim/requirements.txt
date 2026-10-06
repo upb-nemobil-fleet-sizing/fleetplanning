@@ -1,0 +1,3 @@
+-r routing/requirements.txt
+matplotlib==3.10.8
+plotly==6.5.2

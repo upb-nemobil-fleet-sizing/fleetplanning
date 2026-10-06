@@ -1,0 +1,184 @@
+body {
+    font-family: Arial, sans-serif;
+    padding-top: 90px;
+}
+/* Bootstrap's default card/accordion borders (~rgba(0,0,0,0.175) / #dee2e6) are very light and
+   easy to miss against a white background - darken them for clearer section separation. */
+.card {
+    --bs-card-border-color: #adb5bd;
+}
+.accordion-item {
+    --bs-accordion-border-color: #adb5bd;
+}
+/* Match placeholder text to the same muted gray Bootstrap uses for .form-text hints -
+   without this, the browser's own UA placeholder color can look noticeably different. */
+.form-control::placeholder {
+    color: var(--bs-secondary-color, #6c757d);
+    opacity: 1;
+}
+form {
+    margin-bottom: 20px;
+}
+button {
+    margin: 5px 0;
+}
+ul {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+.scroll-list {
+max-height: 200px;
+overflow-y: auto;
+}
+.list-group-item {
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+.landing-hero {
+    background: linear-gradient(135deg, #0a3d62 0%, #145c82 45%, #1a7ca8 100%);
+    border-radius: 16px;
+    color: #fff;
+    overflow: hidden;
+}
+
+.landing-hero-inner {
+    padding: 48px 32px;
+}
+
+.landing-kicker {
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.85;
+}
+
+.landing-step {
+    border-radius: 12px;
+}
+
+.landing-step-number {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #145c82;
+    color: #fff;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.landing-logos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+}
+
+.landing-logo-slot {
+    min-height: 80px;
+    border: 1.5px dashed #9ca3af;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-weight: 600;
+    background: #f8fafc;
+    text-align: center;
+    padding: 10px;
+}
+
+.navbar-partner-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border-radius: 4px;
+    padding: 4px 10px;
+    margin-left: 10px;
+}
+
+.navbar-partner-logo {
+    height: 60px;
+    width: auto;
+    display: block;
+}
+
+.scenario-card {
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.scenario-card-active {
+    border: 2px solid #0d6efd;
+    box-shadow: 0 0 0 0.18rem rgba(13, 110, 253, 0.16);
+    background-color: #f3f8ff;
+}
+
+.demo-progress .progress-bar {
+    transition: none;
+}
+
+.map-legend-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    user-select: none;
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+.map-legend-option input {
+    margin: 0;
+    accent-color: var(--legend-color, #0d6efd);
+}
+
+.map-legend-option-active {
+    background: var(--legend-bg, rgba(13, 110, 253, 0.14));
+    color: var(--legend-color, #0d6efd);
+    font-weight: 600;
+}
+
+.map-legend-cabs {
+    --legend-color: #0d6efd;
+    --legend-bg: rgba(13, 110, 253, 0.14);
+}
+
+.map-legend-chargers {
+    --legend-color: #198754;
+    --legend-bg: rgba(25, 135, 84, 0.14);
+}
+
+.map-legend-pros {
+    --legend-color: #fd7e14;
+    --legend-bg: rgba(253, 126, 20, 0.16);
+}
+
+.map-legend-chains,
+.map-legend-chain-routes {
+    --legend-color: #5b2ca3;
+    --legend-bg: rgba(91, 44, 163, 0.14);
+}
+
+.map-legend-rides,
+.map-legend-ride-lines {
+    --legend-color: #dc3545;
+    --legend-bg: rgba(220, 53, 69, 0.14);
+}
+
+@media (max-width: 768px) {
+    body {
+        padding-top: 76px;
+    }
+
+    .landing-hero-inner {
+        padding: 28px 20px;
+    }
+
+    .navbar-partner-logo {
+        height: 48px;
+    }
+}

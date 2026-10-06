@@ -1,0 +1,1225 @@
+﻿{% extends "base.html" %}
+
+{% block head %}
+  <meta charset="UTF-8">
+  <title>Simulationen - Übergang Input zu Output</title>
+{% endblock %}
+
+{% block content %}
+  <h1 class="mb-4 text-center">Simulationen</h1>
+
+  {# Same explanatory-card style as input_upload.html/index.html's intro cards. #}
+  <div class="card mb-4">
+    <div class="card-body">
+      <p class="mb-2">
+        Auf dieser Seite wird eine Simulation für das aktuell geladene Szenario konfiguriert und gestartet.
+      </p>
+      <ul class="mb-0">
+        <li><strong>Konfigurator:</strong> Suchstrategie, Kostenmodell und weitere Einstellungen.</li>
+        <li><strong>Laufende Simulationen:</strong> Status und Fortschritt aktueller Läufe.</li>
+        <li><strong>Abgeschlossene Simulationen:</strong> fertige Läufe zur weiteren Auswertung.</li>
+      </ul>
+    </div>
+  </div>
+
+  {% if notice == "saved" %}
+    <div class="alert alert-success js-transient-notice" role="alert">
+      Einstellungen wurden gespeichert.
+    </div>
+  {% elif notice == "queued" %}
+    <div class="alert alert-success js-transient-notice" role="alert">
+      Simulation wurde gestartet und läuft im Hintergrund.
+    </div>
+  {% elif notice == "metadata_imported" %}
+    <div class="alert alert-success js-transient-notice" role="alert">
+      Metadaten aus simulation_metadata.json wurden übernommen.
+    </div>
+  {% elif notice == "metadata_invalid" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Die hochgeladene Datei konnte nicht als simulation_metadata.json gelesen werden.
+    </div>
+  {% elif notice == "settings_loaded" %}
+    <div class="alert alert-success js-transient-notice" role="alert">
+      Einstellungen der ausgewählten Simulation wurden in den Konfigurator übernommen.
+    </div>
+  {% elif notice == "settings_load_failed" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Für diese Simulation konnten keine gespeicherten Einstellungen gefunden werden.
+    </div>
+  {% elif notice == "objective_weight_invalid" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Die Gewichtung (alpha) muss eine Zahl zwischen 0 und 1 sein. Bitte korrigieren und erneut speichern.
+    </div>
+  {% elif notice == "cost_model_invalid" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Mindestens ein Wert im Kostenmodell liegt außerhalb des zulässigen Bereichs. Bitte korrigieren und erneut speichern.
+    </div>
+  {% elif notice == "iter_limit_invalid" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Das Iterationslimit muss eine ganze Zahl größer oder gleich 1 sein, oder leer bleiben für den Standardwert. Bitte korrigieren und erneut speichern.
+    </div>
+  {% elif notice == "time_limit_invalid" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Das Zeitlimit muss eine Zahl größer als 0 sein, oder leer bleiben für den Standardwert. Bitte korrigieren und erneut speichern.
+    </div>
+  {% elif notice == "initial_cabs_invalid" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Die Start-Cab-Anzahl muss eine ganze Zahl größer oder gleich 1 sein, oder leer bleiben für den Standardwert der Experiment-Konfiguration. Bitte korrigieren und erneut speichern.
+    </div>
+  {% elif notice == "cab_add_step_invalid" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Die pro Schritt hinzugefügten Cabs müssen eine ganze Zahl größer oder gleich 1 sein, oder leer bleiben für den Standardwert. Bitte korrigieren und erneut speichern.
+    </div>
+  {% elif notice == "shrink_pros_max_tries_invalid" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Die maximale Anzahl an Tests muss eine ganze Zahl größer oder gleich 0 sein, oder leer bleiben für den Standardwert. Bitte korrigieren und erneut speichern.
+    </div>
+  {% elif notice == "stagnation_tolerance_invalid" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Die Stagnationstoleranz muss eine Zahl größer oder gleich 0 sein, oder leer bleiben für den Standardwert. Bitte korrigieren und erneut speichern.
+    </div>
+  {% elif notice == "stagnation_tolerance_patience_invalid" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Das Plateaulimit muss eine ganze Zahl größer oder gleich 0 sein, oder leer bleiben für den Standardwert. Bitte korrigieren und erneut speichern.
+    </div>
+  {% elif notice == "budget_eur_invalid" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Das Budget muss eine Zahl größer als 0 sein, oder leer bleiben für kein Limit. Bitte korrigieren und erneut speichern.
+    </div>
+  {% elif notice == "service_level_min_invalid" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Die Mindest-Bedienrate muss eine Zahl größer als 0 und höchstens 1 sein, oder leer bleiben für kein Minimum. Bitte korrigieren und erneut speichern.
+    </div>
+  {% elif notice == "missing_input" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Bitte lade zuerst Basisdaten, Fahrtdaten und ein Einsatzgebiet, bevor eine Simulation gestartet wird.
+    </div>
+  {% elif notice == "deleted_running" %}
+    <div class="alert alert-success js-transient-notice" role="alert">
+      Laufende Simulation wurde gelöscht.
+    </div>
+  {% elif notice == "deleted_completed" %}
+    <div class="alert alert-success js-transient-notice" role="alert">
+      Abgeschlossene Simulation wurde gelöscht.
+    </div>
+  {% elif notice == "existing_running" %}
+    <div class="alert alert-info js-transient-notice" role="alert">
+      Eine identische Simulation läuft bereits und wurde nicht erneut angelegt.
+    </div>
+  {% elif notice == "fixedfleet_requires_custom" %}
+    <div class="alert alert-warning js-transient-notice" role="alert">
+      Eine Flotte ohne Suche auswerten ist nur mit dem Custom-Sim-Backend möglich.
+    </div>
+  {% elif notice == "output_folder_exists" %}
+    <div class="alert alert-warning" role="alert">
+      Für dieses Szenario existiert bereits ein Output-Ordner (z.B. von einem gelöschten Job).
+      Ein erneuter Start könnte dessen Dateien überschreiben oder mit ihnen vermischt werden.
+      Erneut auf "Simulieren" klicken, um trotzdem fortzufahren.
+    </div>
+  {% endif %}
+
+  {% if job_counters_mismatch %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      Die Anzahl der Job-Ordner in dashboard_jobs stimmt nicht mit der erwarteten Anzahl überein.
+      Vermutlich wurde dort von Hand ein Ordner gelöscht oder hinzugefügt.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endif %}
+
+  {% if demo_mode %}
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title mb-4">Simulation starten</h5>
+      {% if demo_scenarios %}
+        <form id="demoSimulationForm" method="GET" action="{{ url_for('simulation_overview') }}">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-8">
+              <label class="form-label" for="demo_scenario">Szenario</label>
+              <select class="form-select" id="demo_scenario" name="demo_scenario">
+                {% for scenario in demo_scenarios %}
+                  <option value="{{ scenario.id }}" {% if selected_demo_scenario and selected_demo_scenario.id == scenario.id %}selected{% endif %}>
+                    {{ scenario.title }} [{{ 'Adaptive' if scenario.searchMode == 'adaptive' else 'Statische' }}]
+                  </option>
+                {% endfor %}
+              </select>
+              {% if selected_demo_scenario %}
+                <div class="form-text">{{ selected_demo_scenario.summary }}</div>
+              {% endif %}
+            </div>
+            <div class="col-md-4 d-grid">
+              <button type="submit" class="btn btn-outline-primary" id="demoSimulateButton" data-output-url="{{ demo_output_url }}">
+                Simulieren
+              </button>
+            </div>
+          </div>
+        </form>
+        <div id="demoLoadingAlert" class="alert alert-warning d-none mt-3 mb-0" role="alert">
+          <div class="d-flex align-items-center mb-2">
+            <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+            <div>Simulation wird ausgeführt. Ergebnisse werden berechnet...</div>
+          </div>
+          <div class="progress demo-progress" role="progressbar" aria-label="Simulationsfortschritt" aria-valuemin="0" aria-valuemax="100">
+            <div id="demoLoadingProgress" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%">0%</div>
+          </div>
+        </div>
+      {% else %}
+        <div class="alert alert-warning mb-0">
+          Es wurden noch keine Simulationsergebnisse gefunden.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <form method="POST">
+    <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title mb-4">Flottenplanung konfigurieren</h5>
+      <div class="small text-muted mb-1">Aktuell geladene Eingabedaten (aus dem Upload, hier nur zur Info)</div>
+
+      <div class="d-flex flex-wrap gap-2 mb-2">
+        <span class="text-muted small me-1">Quellen:</span>
+        <span class="badge {{ 'text-bg-success' if instance_summary.rideDataFileName else 'text-bg-secondary' }}">
+          Fahrtdaten: {{ instance_summary.rideDataFileName or "keine Datei geladen" }}
+        </span>
+        <span class="badge {{ 'text-bg-success' if instance_summary.baseDataFileName else 'text-bg-secondary' }}">
+          Basisdaten: {{ instance_summary.baseDataFileName or "keine Datei geladen" }}
+        </span>
+        <span class="badge {{ 'text-bg-success' if instance_summary.hasOperationArea else 'text-bg-secondary' }}">
+          Einsatzgebiet {{ "gesetzt" if instance_summary.hasOperationArea else "nicht gesetzt" }}
+        </span>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2 mb-2">
+        <span class="text-muted small me-1">Nachfrage:</span>
+        <span class="badge text-bg-secondary">{{ instance_summary.requestCount }} Fahrtanfragen</span>
+      </div>
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <span class="text-muted small me-1">Infrastruktur:</span>
+        <span class="badge text-bg-secondary">{{ instance_summary.cabCount }} Fahrzeuge</span>
+        <span class="badge text-bg-secondary">{{ instance_summary.chargingPointCount }} Ladepunkte</span>
+        <span class="badge text-bg-secondary">{{ instance_summary.chainingLocationCount }} Chaining Locations</span>
+      </div>
+      {% if not instance_ready %}
+        <div class="alert alert-warning py-2 px-3 mb-3 small" role="alert">
+          Es fehlen noch Eingabedaten (Fahrtanfragen, Fahrzeuge oder Einsatzgebiet, siehe oben) - eine Simulation kann erst gestartet werden, wenn alles geladen ist.
+          <a href="{{ url_for('upload_page') }}{{ nav_context_query or '' }}" class="alert-link">Zur Eingabedaten-Seite</a>
+        </div>
+      {% endif %}
+
+      <div class="card mb-0" style="border-bottom: none; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
+        <div class="card-body pb-2">
+          <h5 class="card-title mb-2">Szenario</h5>
+          <div class="accordion" id="metadataImportAccordion">
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingMetadataImport">
+                <button class="accordion-button collapsed" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#collapseMetadataImport"
+                        aria-expanded="false" aria-controls="collapseMetadataImport">
+                  Metadaten importieren
+                </button>
+              </h2>
+              <div id="collapseMetadataImport" class="accordion-collapse collapse"
+                   aria-labelledby="headingMetadataImport" data-bs-parent="#metadataImportAccordion">
+                <div class="accordion-body">
+                  <div class="small text-muted mb-2">Einstellungen unten aus einer zuvor exportierten Datei übernehmen, statt manuell auszufüllen.</div>
+                  {# Not a native <form> on purpose: it lives nested inside the main <form> below
+                     (same visual card), and <form> elements cannot nest inside each other - the
+                     browser silently drops an inner one, orphaning everything after it from any
+                     form at all. Submitted via fetch() instead, same pattern already used by
+                     saveOperationAreaToServer() and the early-unchaining toggle on this same
+                     page. #}
+                  {# No `required` here on purpose: this input lives inside the main <form> now
+                     (nested in the config card), and a `required` field that's hidden inside a
+                     collapsed accordion makes the browser block that WHOLE outer form's
+                     submission with an unfocusable-control error - the same bug class as the
+                     original "Simulieren does nothing" investigation, just a different trigger.
+                     The empty-file check happens in JS instead, see importMetadataError below. #}
+                  <div class="row g-2 align-items-stretch">
+                    <div class="col-md-7">
+                      <input
+                        type="file"
+                        class="form-control form-control-sm h-100"
+                        id="simulation_metadata_file"
+                        name="simulation_metadata_file"
+                        accept=".json,application/json"
+                      >
+                    </div>
+                    <div class="col-md-5 d-grid">
+                      <button type="button" id="importMetadataButton" class="btn btn-outline-secondary btn-sm w-100">
+                        Metadaten importieren
+                      </button>
+                    </div>
+                  </div>
+                  <div id="importMetadataError" class="small text-danger mt-2 d-none">
+                    Bitte zuerst eine Datei auswählen.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-3" style="border-top-left-radius: 0; border-top-right-radius: 0;">
+        <div class="card-body pt-2">
+          <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label" for="scenario_name">Szenario-Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="scenario_name"
+                  name="scenario_name"
+                  placeholder="{{ default_scenario_name }}"
+                  value="{{ draft.get('scenarioName', '') }}"
+                >
+                <div class="form-text">Reine Bezeichnung zur Wiedererkennung, ohne Einfluss auf die Simulation. Bleibt das Feld leer, wird der grau angezeigte Name vergeben.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title mb-1">Fleetplanning-Algorithmus</h5>
+            <p class="text-muted small mb-3">
+              Alles, was die Fahrzeugplanungs-Suche selbst steuert - wird mit weiteren Einstellungen wachsen.
+            </p>
+
+            {# Only this part is search-specific and hidden by "Flotte ohne Suche auswerten" -
+               the Kostenmodell accordion further down still applies to a fixed-fleet run (it
+               drives the output-side cost/profit KPIs regardless of how the fleet was produced),
+               so it stays outside this wrapper and always visible. #}
+            <div id="searchOnlySettings">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label" for="search_mode">Suchstrategie</label>
+                <select class="form-select" id="search_mode" name="search_mode">
+                  <option value="static" {% if draft.get('searchMode', sim_defaults.searchMode) == 'static' %}selected{% endif %}>
+                    Statische (Cabs wachsen schrittweise, Pro-Anzahl fest)
+                  </option>
+                  <option value="adaptive" {% if draft.get('searchMode', sim_defaults.searchMode) == 'adaptive' %}selected{% endif %}>
+                    Adaptive (Cabs und Pros wachsen und schrumpfen)
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-3">
+              <div class="col-md-6">
+                <label class="form-label mb-1">Zielgewichtung (alpha)</label>
+                <div class="small text-muted mb-2">Je eine Kennzahl pro Perspektive - alpha gewichtet zwischen beiden.</div>
+                {% set active_terms = draft.get('objectiveTerms') if draft.get('objectiveTerms') else sim_defaults.objectiveTerms %}
+                <div id="objectiveTermsPanel">
+                  <div class="small text-muted mb-1">Kundenperspektive</div>
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio"
+                      id="objective_term_customer_total_served" name="objective_term_customer" value="total_served"
+                      {% if 'avg_in_vehicle_time_s' not in active_terms %}checked{% endif %}>
+                    <label class="form-check-label" for="objective_term_customer_total_served">
+                      Bedienrate (erfüllte Fahrten)
+                    </label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio"
+                      id="objective_term_customer_avg_in_vehicle_time_s" name="objective_term_customer" value="avg_in_vehicle_time_s"
+                      {% if 'avg_in_vehicle_time_s' in active_terms %}checked{% endif %}>
+                    <label class="form-check-label" for="objective_term_customer_avg_in_vehicle_time_s">
+                      Durchschnittliche Fahrzeit im Fahrzeug
+                    </label>
+                  </div>
+
+                  <div class="small text-muted mb-1">Betreiberperspektive</div>
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio"
+                      id="objective_term_operator_avg_cost_per_trip_eur" name="objective_term_operator" value="avg_cost_per_trip_eur"
+                      {% if 'avg_profit_per_trip_eur' not in active_terms %}checked{% endif %}>
+                    <label class="form-check-label" for="objective_term_operator_avg_cost_per_trip_eur">
+                      Durchschnittliche Kosten pro Fahrt
+                    </label>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio"
+                      id="objective_term_operator_avg_profit_per_trip_eur" name="objective_term_operator" value="avg_profit_per_trip_eur"
+                      {% if 'avg_profit_per_trip_eur' in active_terms %}checked{% endif %}>
+                    <label class="form-check-label" for="objective_term_operator_avg_profit_per_trip_eur">
+                      Durchschnittlicher Gewinn pro Fahrt
+                    </label>
+                  </div>
+
+                  <label class="form-label" for="objective_weight">Gewichtung (alpha)</label>
+                  {% set objective_weight_value = draft.get('objectiveWeight') if draft.get('objectiveWeight') is not none else sim_defaults.objectiveWeight %}
+                  <div class="d-flex align-items-center gap-3">
+                    <input
+                      type="range"
+                      class="form-range"
+                      id="objective_weight_slider"
+                      min="0"
+                      max="1"
+                      step="0.001"
+                      value="{{ objective_weight_value }}"
+                    >
+                    <input
+                      type="number"
+                      class="form-control"
+                      id="objective_weight"
+                      name="objective_weight"
+                      min="0"
+                      max="1"
+                      step="any"
+                      style="max-width: 8rem;"
+                      value="{{ objective_weight_value }}"
+                    >
+                  </div>
+                  <div id="objectiveWeightHint" class="form-text mt-2">
+                    1 = ausschließlich Kundenperspektive, 0 = ausschließlich Betreiberperspektive.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion mt-3" id="advancedAlgorithmAccordion">
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingAdvancedAlgorithm">
+                  <button class="accordion-button collapsed" type="button"
+                          data-bs-toggle="collapse" data-bs-target="#collapseAdvancedAlgorithm"
+                          aria-expanded="false" aria-controls="collapseAdvancedAlgorithm">
+                    Erweiterte Einstellungen
+                  </button>
+                </h2>
+                <div id="collapseAdvancedAlgorithm" class="accordion-collapse collapse"
+                     aria-labelledby="headingAdvancedAlgorithm" data-bs-parent="#advancedAlgorithmAccordion">
+                  <div class="accordion-body">
+
+                    <div class="alert alert-warning small" role="alert">
+                      Änderungen an diesen Einstellungen können die Anzahl der Suchiterationen und die
+                      Laufzeit der Suche stark erhöhen.
+                    </div>
+
+                    <h6 class="text-muted small text-uppercase mb-2">Such-Limits</h6>
+                    <div class="row g-3 mb-3">
+                      <div class="col-md-4">
+                        <label class="form-label" for="iter_limit">Iterationslimit</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="iter_limit"
+                          name="iter_limit"
+                          min="1"
+                          step="1"
+                          value="{{ draft.get('iterLimit') if draft.get('iterLimit') is not none else sim_defaults.iterLimit }}"
+                        >
+                        <div class="form-text">Maximale Anzahl an Suchiterationen.</div>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label" for="time_limit">Zeitlimit (Sekunden)</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="time_limit"
+                          name="time_limit"
+                          min="0"
+                          step="any"
+                          value="{{ draft.get('timeLimit') if draft.get('timeLimit') is not none else sim_defaults.timeLimit }}"
+                        >
+                        <div class="form-text">Maximale Laufzeit der Suche. Die Suche stoppt, sobald eines der beiden Limits erreicht ist.</div>
+                      </div>
+                    </div>
+
+                    <h6 class="text-muted small text-uppercase mb-2">Cab-Wachstum</h6>
+                    <div class="row g-3 mb-3">
+                      <div class="col-md-4">
+                        <label class="form-label" for="initial_cabs">Start-Cab-Anzahl</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="initial_cabs"
+                          name="initial_cabs"
+                          min="1"
+                          step="1"
+                          value="{{ draft.get('initialCabs') if draft.get('initialCabs') is not none else sim_defaults.initialCabs }}"
+                        >
+                        <div class="form-text">Anzahl Cabs zu Beginn der Suche.</div>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label" for="cab_add_step">Cabs pro Wachstumsschritt</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="cab_add_step"
+                          name="cab_add_step"
+                          min="1"
+                          step="1"
+                          value="{{ draft.get('cabAddStep') if draft.get('cabAddStep') is not none else sim_defaults.cabAddStep }}"
+                        >
+                        <div class="form-text">
+                          Statische Suche: fester Schritt pro Iteration. Adaptive Suche: Untergrenze für den
+                          schätzungsbasierten Wachstumsschritt - die Schätzung kann auch mehr Cabs vorschlagen.
+                        </div>
+                      </div>
+                    </div>
+
+                    <h6 class="text-muted small text-uppercase mb-2">Stagnationstoleranz</h6>
+                    <p class="text-muted small mb-3">
+                      Lässt die Suche einen Schritt akzeptieren, der das Ergebnis nur geringfügig verschlechtert,
+                      statt bei jedem nicht verbessernden Schritt sofort abzubrechen. Wirkt auf das Cab-Wachstum
+                      in beiden Suchstrategien sowie, in der adaptiven Suche, auf den Pro-Test.
+                    </p>
+                    <div class="row g-3 mb-3">
+                      <div class="col-md-4">
+                        <label class="form-label" for="stagnation_tolerance">Toleranz</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="stagnation_tolerance"
+                          name="stagnation_tolerance"
+                          min="0"
+                          step="any"
+                          value="{{ draft.get('stagnationTolerance') if draft.get('stagnationTolerance') is not none else sim_defaults.stagnationTolerance }}"
+                        >
+                        <div class="form-text">
+                          Anteil, um den ein Schritt hinter dem bisherigen Ergebnis zurückbleiben darf und trotzdem
+                          als ausreichend nah gilt. 0 (Standard): kein Toleranzverhalten.
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label" for="stagnation_tolerance_patience">Plateaulimit</label>
+                        <input
+                          type="number"
+                          class="form-control"
+                          id="stagnation_tolerance_patience"
+                          name="stagnation_tolerance_patience"
+                          min="0"
+                          step="1"
+                          value="{{ draft.get('stagnationTolerancePatience') if draft.get('stagnationTolerancePatience') is not none else sim_defaults.stagnationTolerancePatience }}"
+                        >
+                        <div class="form-text">
+                          Maximale Anzahl aufeinanderfolgender, nur durch die Toleranz akzeptierter Schritte, bevor
+                          endgültig abgebrochen wird.
+                        </div>
+                      </div>
+                    </div>
+
+                    <div id="adaptiveOnlySettings" style="{{ '' if draft.get('searchMode', sim_defaults.searchMode) == 'adaptive' else 'display: none;' }}">
+                      <h6 class="text-muted small text-uppercase mb-2">Parameter für Adaptive Suche</h6>
+                      <p class="text-muted small mb-3">
+                        Bevor die adaptive Suche einen Pro endgültig entfernt, testet sie zunächst, ob sich der
+                        Wegfall durch zusätzliche Cabs ausgleichen lässt. Die folgenden Einstellungen steuern
+                        dieses Testverhalten.
+                      </p>
+                      <div class="row g-3">
+                        <div class="col-md-4">
+                          <label class="form-label" for="shrink_pros_max_tries">Maximale Anzahl an Tests</label>
+                          <input
+                            type="number"
+                            class="form-control"
+                            id="shrink_pros_max_tries"
+                            name="shrink_pros_max_tries"
+                            min="0"
+                            step="1"
+                            value="{{ draft.get('shrinkProsMaxTries') if draft.get('shrinkProsMaxTries') is not none else sim_defaults.shrinkProsMaxTries }}"
+                          >
+                          <div class="form-text">
+                            Anzahl der Pros, die pro Durchlauf maximal getestet werden, bevor die Suche aufgibt.
+                            Bei 0 entfällt dieser Test vollständig: Sobald eine Pro-Entfernung das Ergebnis
+                            nicht verbessert, bricht die Suche sofort ab, ohne zu prüfen, ob zusätzliche Cabs
+                            das ausgleichen könnten.
+                          </div>
+                        </div>
+                      </div>
+                      <div class="row g-3 mt-1">
+                        <div class="col-md-4">
+                          <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="shrink_pros_allow_retry"
+                              name="shrink_pros_allow_retry"
+                              {% if draft.get('shrinkProsAllowRetry', False) %}checked{% endif %}>
+                            <label class="form-check-label" for="shrink_pros_allow_retry">Erneuter Test für zuvor gescheiterte Pros</label>
+                          </div>
+                          <div class="form-text">
+                            Ein Pro, dessen Test bereits gescheitert ist, wird sonst für den Rest der Phase
+                            nicht erneut geprüft. Diese Option lässt einen erneuten Test zu, sobald der Test
+                            eines anderen Pro erfolgreich war.
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="shrink_pros_trial_probe_below_start"
+                              name="shrink_pros_trial_probe_below_start"
+                              {% if draft.get('shrinkProsTrialProbeBelowStart', True) %}checked{% endif %}>
+                            <label class="form-check-label" for="shrink_pros_trial_probe_below_start">Bei erfolglosem Test auch geringere Cab-Anzahl prüfen</label>
+                          </div>
+                          <div class="form-text">
+                            Bringt das Hinzufügen von Cabs im Test keine Verbesserung, wird zusätzlich geprüft,
+                            ob die Cab-Anzahl sogar unter den Ausgangswert sinken kann.
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="shrink_pros_trial_overshoot_correction"
+                              name="shrink_pros_trial_overshoot_correction"
+                              {% if draft.get('shrinkProsTrialOvershootCorrection', False) %}checked{% endif %}>
+                            <label class="form-check-label" for="shrink_pros_trial_overshoot_correction">Große Cab-Zuwächse im Test nachträglich prüfen</label>
+                          </div>
+                          <div class="form-text">
+                            Wächst die Cab-Anzahl im Test in einem Schritt um mehr als ein Fahrzeug, wird
+                            anschließend geprüft, ob der gesamte Zuwachs tatsächlich erforderlich war.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
+
+            <div class="accordion mt-3" id="costModelAccordion">
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingCostModel">
+                  <button class="accordion-button collapsed" type="button"
+                          data-bs-toggle="collapse" data-bs-target="#collapseCostModel"
+                          aria-expanded="false" aria-controls="collapseCostModel">
+                    Kostenmodell
+                  </button>
+                </h2>
+                <div id="collapseCostModel" class="accordion-collapse collapse"
+                     aria-labelledby="headingCostModel" data-bs-parent="#costModelAccordion">
+                  <div class="accordion-body">
+                    <p class="text-muted small mb-3">
+                      Diese Werte bestimmen die amortisierten Flottenkosten und das Fahrpreismodell auf der
+                      Output-Seite (Kosten/Erlös/Gewinn-KPIs). Vorgaben sind grobe Schätzwerte und können
+                      jederzeit angepasst werden.
+                    </p>
+                    <h6 class="text-muted small text-uppercase mb-2">Fahrzeugpreise &amp; Energie</h6>
+                    <div class="table-responsive mb-3">
+                      <table class="table table-sm align-middle mb-0">
+                        <tbody>
+                          <tr>
+                            <td><label class="form-label mb-0" for="cab_price">Preis pro Cab (EUR)</label></td>
+                            <td style="width: 160px;">
+                              <input type="number" step="any" min="0" class="form-control form-control-sm"
+                                     id="cab_price" name="cab_price"
+                                     value="{{ draft.get('cabPrice') if draft.get('cabPrice') is not none else sim_defaults.cabPrice }}">
+                            </td>
+                            <td class="text-muted small"></td>
+                          </tr>
+                          <tr>
+                            <td><label class="form-label mb-0" for="pro_price">Preis pro Pro (EUR)</label></td>
+                            <td style="width: 160px;">
+                              <input type="number" step="any" min="0" class="form-control form-control-sm"
+                                     id="pro_price" name="pro_price"
+                                     value="{{ draft.get('proPrice') if draft.get('proPrice') is not none else sim_defaults.proPrice }}">
+                            </td>
+                            <td class="text-muted small"></td>
+                          </tr>
+                          <tr>
+                            <td><label class="form-label mb-0" for="stationary_kwh_price">Preis pro kWh Netzstrom (Cab, stationär) (EUR)</label></td>
+                            <td style="width: 160px;">
+                              <input type="number" step="any" min="0" class="form-control form-control-sm"
+                                     id="stationary_kwh_price" name="stationary_kwh_price"
+                                     value="{{ draft.get('stationaryKwhPrice') if draft.get('stationaryKwhPrice') is not none else sim_defaults.stationaryKwhPrice }}">
+                            </td>
+                            <td class="text-muted small"></td>
+                          </tr>
+                          <tr>
+                            <td><label class="form-label mb-0" for="pro_kwh_price">Preis pro kWh Pro-geladen (Wasserstoff) (EUR)</label></td>
+                            <td style="width: 160px;">
+                              <input type="number" step="any" min="0" class="form-control form-control-sm"
+                                     id="pro_kwh_price" name="pro_kwh_price"
+                                     value="{{ draft.get('proKwhPrice') if draft.get('proKwhPrice') is not none else sim_defaults.proKwhPrice }}">
+                            </td>
+                            <td class="text-muted small">Standard = gleich wie Netzstrompreis, bis echte Wasserstoffkosten vorliegen</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <h6 class="text-muted small text-uppercase mb-2">Abschreibung &amp; Betrieb</h6>
+                    <div class="table-responsive mb-3">
+                      <table class="table table-sm align-middle mb-0">
+                        <tbody>
+                          <tr>
+                            <td><label class="form-label mb-0" for="cab_lifetime_years">Cab-Nutzungsdauer (Jahre)</label></td>
+                            <td style="width: 160px;">
+                              <input type="number" step="any" min="0.1" class="form-control form-control-sm"
+                                     id="cab_lifetime_years" name="cab_lifetime_years"
+                                     value="{{ draft.get('cabLifetimeYears') if draft.get('cabLifetimeYears') is not none else sim_defaults.cabLifetimeYears }}">
+                            </td>
+                            <td class="text-muted small"></td>
+                          </tr>
+                          <tr>
+                            <td><label class="form-label mb-0" for="pro_lifetime_years">Pro-Nutzungsdauer (Jahre)</label></td>
+                            <td style="width: 160px;">
+                              <input type="number" step="any" min="0.1" class="form-control form-control-sm"
+                                     id="pro_lifetime_years" name="pro_lifetime_years"
+                                     value="{{ draft.get('proLifetimeYears') if draft.get('proLifetimeYears') is not none else sim_defaults.proLifetimeYears }}">
+                            </td>
+                            <td class="text-muted small"></td>
+                          </tr>
+                          <tr>
+                            <td><label class="form-label mb-0" for="interest_rate_percent">Zinssatz (%)</label></td>
+                            <td style="width: 160px;">
+                              <input type="number" step="any" min="0" class="form-control form-control-sm"
+                                     id="interest_rate_percent" name="interest_rate_percent"
+                                     value="{{ draft.get('interestRatePercent') if draft.get('interestRatePercent') is not none else sim_defaults.interestRatePercent }}">
+                            </td>
+                            <td class="text-muted small">0 = lineare Abschreibung, &gt;0 = Annuitäten-Abschreibung</td>
+                          </tr>
+                          <tr>
+                            <td><label class="form-label mb-0" for="operating_days_per_year">Betriebstage pro Jahr</label></td>
+                            <td style="width: 160px;">
+                              <input type="number" step="1" min="1" max="366" class="form-control form-control-sm"
+                                     id="operating_days_per_year" name="operating_days_per_year"
+                                     value="{{ draft.get('operatingDaysPerYear') if draft.get('operatingDaysPerYear') is not none else sim_defaults.operatingDaysPerYear }}">
+                            </td>
+                            <td class="text-muted small"></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <h6 class="text-muted small text-uppercase mb-2">Fahrpreismodell</h6>
+                    <div class="table-responsive">
+                      <table class="table table-sm align-middle mb-0">
+                        <tbody>
+                          <tr>
+                            <td><label class="form-label mb-0" for="fare_base_eur">Fahrpreis Grundgebühr (EUR)</label></td>
+                            <td style="width: 160px;">
+                              <input type="number" step="any" min="0" class="form-control form-control-sm"
+                                     id="fare_base_eur" name="fare_base_eur"
+                                     value="{{ draft.get('fareBaseEur') if draft.get('fareBaseEur') is not none else sim_defaults.fareBaseEur }}">
+                            </td>
+                            <td class="text-muted small"></td>
+                          </tr>
+                          <tr>
+                            <td><label class="form-label mb-0" for="fare_distance_eur_per_m">Fahrpreis pro Meter (EUR)</label></td>
+                            <td style="width: 160px;">
+                              <input type="number" step="any" min="0" class="form-control form-control-sm"
+                                     id="fare_distance_eur_per_m" name="fare_distance_eur_per_m"
+                                     value="{{ draft.get('fareDistanceEurPerM') if draft.get('fareDistanceEurPerM') is not none else sim_defaults.fareDistanceEurPerM }}">
+                            </td>
+                            <td class="text-muted small"></td>
+                          </tr>
+                          <tr>
+                            <td><label class="form-label mb-0" for="fare_time_eur_per_hour">Fahrpreis pro Stunde (EUR)</label></td>
+                            <td style="width: 160px;">
+                              <input type="number" step="any" min="0" class="form-control form-control-sm"
+                                     id="fare_time_eur_per_hour" name="fare_time_eur_per_hour"
+                                     value="{{ draft.get('fareTimeEurPerHour') if draft.get('fareTimeEurPerHour') is not none else sim_defaults.fareTimeEurPerHour }}">
+                            </td>
+                            <td class="text-muted small"></td>
+                          </tr>
+                          <tr>
+                            <td><label class="form-label mb-0" for="fare_min_per_trip_eur">Mindestfahrpreis (EUR)</label></td>
+                            <td style="width: 160px;">
+                              <input type="number" step="any" min="0" class="form-control form-control-sm"
+                                     id="fare_min_per_trip_eur" name="fare_min_per_trip_eur"
+                                     value="{{ draft.get('fareMinPerTripEur') if draft.get('fareMinPerTripEur') is not none else sim_defaults.fareMinPerTripEur }}">
+                            </td>
+                            <td class="text-muted small"></td>
+                          </tr>
+                          <tr>
+                            <td><label class="form-label mb-0" for="fare_daily_subscription_eur">Tagesabo-Gebühr (EUR)</label></td>
+                            <td style="width: 160px;">
+                              <input type="number" step="any" min="0" class="form-control form-control-sm"
+                                     id="fare_daily_subscription_eur" name="fare_daily_subscription_eur"
+                                     value="{{ draft.get('fareDailySubscriptionEur') if draft.get('fareDailySubscriptionEur') is not none else sim_defaults.fareDailySubscriptionEur }}">
+                            </td>
+                            <td class="text-muted small">Aktuell nicht in den Fahrpreis-KPIs berücksichtigt</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+              <symbol id="info-fill" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+              </symbol>
+            </svg>
+            <div class="alert alert-primary d-flex align-items-center mt-3 mb-0" role="alert">
+              <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Info:"><use xlink:href="#info-fill"/></svg>
+              <div>
+                Preise/Fahrpreismodell fließen in die Output-Seite (Kosten/Erlös/Gewinn-KPIs) und - sofern
+                "Durchschnittliche Kosten pro Fahrt" oben ausgewählt ist - direkt in die Suche selbst ein.
+                Vorgaben sind grobe Schätzwerte und können jederzeit angepasst werden.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3" id="hardConstraintsCard">
+          <div class="card-body">
+            <h5 class="card-title mb-1">Harte Nebenbedingungen</h5>
+            <p class="text-muted small mb-3">
+              Grenzen, die die Suche nie verletzt - unabhängig von der gewählten Suchstrategie. Leer = deaktiviert.
+            </p>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label" for="budget_eur">Budget (EUR)</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="budget_eur"
+                  name="budget_eur"
+                  min="0"
+                  step="any"
+                  value="{{ draft.get('budgetEur') if draft.get('budgetEur') is not none else '' }}"
+                >
+                <div class="form-text">Maximaler Anschaffungspreis der Flotte (Cabs + Pros). Leer = kein Limit.</div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label" for="service_level_min">Mindest-Bedienrate</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="service_level_min"
+                  name="service_level_min"
+                  min="0"
+                  max="1"
+                  step="any"
+                  value="{{ draft.get('serviceLevelMin') if draft.get('serviceLevelMin') is not none else '' }}"
+                >
+                <div class="form-text">Anteil zu erfüllender Fahrtanfragen, z.B. 0.9 = 90&percnt;. Leer = kein Minimum.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title mb-1">Simulation</h5>
+            <p class="text-muted small mb-3">
+              Backend-Simulator - weitere simulationsspezifische Einstellungen folgen hier.
+            </p>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label" for="algorithm">Backend-Simulator</label>
+                <select class="form-select" id="algorithm" name="algorithm">
+                  {% for algo in ['rwapi','sumo','custom'] %}
+                    <option value="{{ algo }}" {% if draft.get('algorithm', 'custom') == algo %}selected{% endif %}>{{ algo }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div id="sumoBackendWarning" class="alert alert-warning small mt-3 mb-0" role="alert"
+                 style="{{ '' if draft.get('algorithm', 'custom') == 'sumo' else 'display: none;' }}">
+              SUMO erfordert eine lokale SUMO-Installation und die Umgebungsvariable <code>SUMO_HOME</code>.
+              Ist SUMO nicht korrekt eingerichtet, schlägt die Simulation fehl.
+            </div>
+            <div id="rwapiBackendWarning" class="alert alert-warning small mt-3 mb-0" role="alert"
+                 style="{{ '' if draft.get('algorithm', 'custom') == 'rwapi' else 'display: none;' }}">
+              Die RW-API erfordert eine erreichbare externe API sowie hinterlegte Zugangsdaten.
+              Ist der Server nicht erreichbar oder fehlen die Zugangsdaten, schlägt die Simulation fehl.
+            </div>
+            <div id="customSimOnlySettings" class="row g-3 mt-1" style="{{ '' if draft.get('algorithm', 'custom') == 'custom' else 'display: none;' }}">
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="early_unchaining_enabled"
+                    name="early_unchaining_enabled"
+                    {% if draft.get('earlyUnchainingEnabled', True) %}checked{% endif %}>
+                  <label class="form-check-label" for="early_unchaining_enabled">Early Unchaining</label>
+                </div>
+                <div class="form-text">
+                  Beim Konvoi-Modus darf das Cab die Pro-Mitfahrt (PT) vorzeitig verlassen, statt immer bis zum
+                  geplanten Ende zu fahren, wenn das für die Restfahrt (Last Mile) günstiger ist. Nur für den
+                  Custom-Simulator. Standardmäßig aktiv - deaktivieren, um das alte Verhalten (Entkopplung nur
+                  am Ende der Pro-Mitfahrt) zu erzwingen.
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="run_kind_fixedfleet"
+                    name="run_kind_fixedfleet"
+                    {% if draft.get('runKind') == 'fixedfleet' %}checked{% endif %}>
+                  <label class="form-check-label" for="run_kind_fixedfleet">Flotte ohne Suche auswerten</label>
+                </div>
+                <div class="form-text">
+                  Führt die aktuell geladene Flotte genau einmal durch den Custom-Simulator aus, ohne
+                  FleetPlanning-Suche. Suchstrategie, Suchlimits und harte Nebenbedingungen entfallen dann -
+                  Kostenmodell und Early Unchaining wirken weiterhin.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-3">
+          <button type="submit" name="action" value="export_metadata" class="btn btn-outline-secondary btn-sm"
+                  title="Exportiert nur die Einstellungen unten, unabhängig von den geladenen Eingabedaten">
+            Einstellungen exportieren
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+          <div class="card-body text-center py-4">
+            {# not `disabled` - this is the form's first/default submit button, and per the HTML
+               spec a disabled default button makes Enter silently do nothing anywhere in the
+               form (no submission attempt at all, so neither this button's own hint nor any
+               other field's validation - e.g. objective_weight's - ever gets a chance to show a
+               warning). Still visually discouraged via styling; _instance_ready() on the server
+               is the real gate (see the "queue" action's own missing_input check). #}
+            {# 1 only on a page load that shows the output_folder_exists warning, so a resubmit from
+               that page counts as confirmed. #}
+            <input type="hidden" name="confirm_output_reuse" value="{{ '1' if notice == 'output_folder_exists' else '0' }}">
+            <button type="submit" name="action" value="queue" id="simulateSubmitButton"
+                    class="btn btn-lg px-5 {{ 'btn-secondary opacity-50' if not instance_ready else 'btn-primary' }}"
+                    {% if not instance_ready %}title="Es fehlen noch Eingabedaten (siehe Hinweis oben)"{% endif %}>
+              Simulieren
+            </button>
+          </div>
+        </div>
+      </form>
+      {% endif %}
+
+  {% include "_simulation_jobs.html" %}
+
+  <div class="d-flex justify-content-between mb-3">
+    <a href="{{ url_for('index', locked=1) }}{{ (nav_context_query or '')|replace('?', '&', 1) }}" class="btn btn-outline-secondary">Zurück zur Übersicht</a>
+    <a href="{{ url_for('output_page') }}" class="btn btn-outline-primary">Direkt zur Output-Seite</a>
+  </div>
+
+  <script>
+    // Poll the running/completed simulation tables in place instead of reloading the whole
+    // page - no scroll-position reset, and it doesn't discard whatever else is mid-edit
+    // elsewhere on the page (e.g. the Kostenmodell fields) the way a full reload would.
+    // Delete buttons inside the section reuse the same refresh - they used to be plain form
+    // submits, which had the identical full-reload/scroll-jump problem.
+    (function () {
+      let section = document.getElementById("simulationJobsSection");
+      if (!section) {
+        return;
+      }
+
+      function refresh() {
+        // Swapping the section out from under an open "Einstellungen ansehen" modal detaches
+        // the node Bootstrap's Modal instance is bound to - its backdrop (appended to <body>,
+        // outside this section) is then never removed and the modal can't be closed anymore.
+        // Defer instead of swapping while one is open.
+        if (section.querySelector(".modal.show")) {
+          setTimeout(refresh, 10000);
+          return;
+        }
+        fetch("{{ url_for('simulation_jobs_fragment') }}")
+          .then((response) => response.text())
+          .then((html) => {
+            const wrapper = document.createElement("div");
+            wrapper.innerHTML = html;
+            const updated = wrapper.querySelector("#simulationJobsSection");
+            if (!updated) {
+              return;
+            }
+            section.replaceWith(updated);
+            section = updated;
+            if (section.dataset.hasRunning === "true") {
+              setTimeout(refresh, 10000);
+            }
+          })
+          .catch(function () {
+            // network hiccup - keep trying rather than giving up silently
+            setTimeout(refresh, 10000);
+          });
+      }
+
+      if (section.dataset.hasRunning === "true") {
+        setTimeout(refresh, 10000);
+      }
+
+      document.addEventListener("submit", function (event) {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement) || !section.contains(form)) {
+          return;
+        }
+        const action = form.querySelector('input[name="action"]');
+        if (!action) {
+          return;
+        }
+
+        if (action.value === "load_job_settings") {
+          // real submit/reload, not the AJAX-in-place delete flow below - the Konfigurator
+          // card this loads into lives outside simulationJobsSection, so it needs a real
+          // page load to actually show the new values.
+          const confirmed = window.confirm(
+            "Aktuelle Einstellungen im Konfigurator (Suchstrategie, Kostenmodell, Ziel) durch " +
+            "die dieser Simulation ersetzen? Der Entwurf oben wird dabei überschrieben."
+          );
+          if (!confirmed) {
+            event.preventDefault();
+          }
+          return;
+        }
+
+        if (action.value !== "delete_running" && action.value !== "delete_completed") {
+          return;
+        }
+        event.preventDefault();
+        const label = action.value === "delete_running" ? "laufenden/fehlgeschlagenen" : "abgeschlossenen";
+        const confirmed = window.confirm(
+          `Diesen ${label} Eintrag aus der Liste entfernen?\n\n` +
+          "Das entfernt nur den Dashboard-Eintrag, nicht die eigentlichen Simulationsdaten."
+        );
+        if (!confirmed) {
+          return;
+        }
+        // Not form.action: these forms never set an explicit action attribute, and a form
+        // with a field literally named "action" (which this one has, on purpose) has that
+        // field's element shadow the form's own built-in .action URL property - fetch() then
+        // stringifies the element itself ("[object HTMLInputElement]") instead of a real URL.
+        fetch(window.location.href, {method: "POST", body: new FormData(form)})
+          .then(refresh)
+          .catch(refresh);
+      });
+    })();
+  </script>
+  <script>
+    // Ticks the runtime counters every second, purely client-side (no request) - the 10s
+    // poll above still owns the authoritative value and re-syncs it on every refresh.
+    (function () {
+      function formatElapsed(startedAt) {
+        const started = new Date(startedAt);
+        if (isNaN(started.getTime())) {
+          return null;
+        }
+        const totalSeconds = Math.max(0, Math.floor((Date.now() - started.getTime()) / 1000));
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const pad = (n) => String(n).padStart(2, "0");
+        return hours > 0 ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`;
+      }
+
+      function tick() {
+        document.querySelectorAll(".js-runtime[data-started-at]").forEach((el) => {
+          const startedAt = el.dataset.startedAt;
+          if (!startedAt) {
+            return;
+          }
+          const text = formatElapsed(startedAt);
+          if (text !== null) {
+            el.textContent = text;
+          }
+        });
+      }
+
+      setInterval(tick, 1000);
+    })();
+  </script>
+  {% if demo_mode %}
+    <script>
+      (function () {
+        const form = document.getElementById("demoSimulationForm");
+        const select = document.getElementById("demo_scenario");
+        const alertBox = document.getElementById("demoLoadingAlert");
+        if (!form || !select) {
+          return;
+        }
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          const button = document.getElementById("demoSimulateButton");
+          const progress = document.getElementById("demoLoadingProgress");
+          const durationMs = {{ (demo_loading_seconds * 1000)|int }};
+          if (button) {
+            button.disabled = true;
+            button.textContent = "Simulation laeuft...";
+          }
+          if (alertBox) {
+            alertBox.classList.remove("d-none");
+          }
+          if (progress) {
+            progress.style.width = "0%";
+            progress.textContent = "0%";
+          }
+          const outputUrl = new URL("{{ url_for('output_page') }}", window.location.origin);
+          outputUrl.searchParams.set("demo_scenario", select.value);
+          const startTime = window.performance.now();
+          const tick = function (now) {
+            const percent = Math.min(100, Math.round(((now - startTime) / durationMs) * 100));
+            if (progress) {
+              progress.style.width = percent + "%";
+              progress.textContent = percent + "%";
+              progress.setAttribute("aria-valuenow", String(percent));
+            }
+            if (percent < 100) {
+              window.requestAnimationFrame(tick);
+            }
+          };
+          window.requestAnimationFrame(tick);
+          window.setTimeout(function () {
+            window.location.href = outputUrl.toString();
+          }, durationMs);
+        });
+      })();
+    </script>
+  {% endif %}
+  <script>
+    (function () {
+      const alerts = document.querySelectorAll(".js-transient-notice");
+      if (alerts.length === 0) {
+        return;
+      }
+      setTimeout(function () {
+        alerts.forEach(function (alert) {
+          alert.classList.add("d-none");
+        });
+        const url = new URL(window.location.href);
+        if (url.searchParams.has("notice")) {
+          url.searchParams.delete("notice");
+          window.history.replaceState({}, "", url.toString());
+        }
+      }, 10000);
+    })();
+  </script>
+  <script>
+    (function () {
+      const weightInput = document.getElementById("objective_weight");
+      const weightSlider = document.getElementById("objective_weight_slider");
+      if (!weightInput) {
+        return;
+      }
+
+      // keep the slider and the precise number input in sync in both directions
+      if (weightSlider) {
+        weightSlider.addEventListener("input", function () {
+          weightInput.value = weightSlider.value;
+        });
+        weightInput.addEventListener("input", function () {
+          if (weightInput.validity.valid) {
+            weightSlider.value = weightInput.value;
+          }
+        });
+      }
+
+      // The browser's own min/max messages ("Value must be greater than or equal to 0" /
+      // "...less than or equal to 1") only ever report the one bound that was actually
+      // violated. Override both with one combined message via the Constraint Validation API -
+      // must be cleared (empty string) once the value is valid again, or the field would stay
+      // stuck reporting invalid forever.
+      function updateWeightValidity() {
+        if (weightInput.validity.rangeUnderflow || weightInput.validity.rangeOverflow) {
+          weightInput.setCustomValidity("Wert muss zwischen 0 und 1 liegen.");
+        } else {
+          weightInput.setCustomValidity("");
+        }
+      }
+      weightInput.addEventListener("input", updateWeightValidity);
+      weightInput.addEventListener("change", updateWeightValidity);
+    })();
+  </script>
+  <script>
+    (function () {
+      const algorithmSelect = document.getElementById("algorithm");
+      const customSimOnlySettings = document.getElementById("customSimOnlySettings");
+      const sumoBackendWarning = document.getElementById("sumoBackendWarning");
+      const rwapiBackendWarning = document.getElementById("rwapiBackendWarning");
+      if (!algorithmSelect || !customSimOnlySettings) {
+        return;
+      }
+      function sync() {
+        customSimOnlySettings.style.display = algorithmSelect.value === "custom" ? "" : "none";
+        if (sumoBackendWarning) {
+          sumoBackendWarning.style.display = algorithmSelect.value === "sumo" ? "" : "none";
+        }
+        if (rwapiBackendWarning) {
+          rwapiBackendWarning.style.display = algorithmSelect.value === "rwapi" ? "" : "none";
+        }
+      }
+      algorithmSelect.addEventListener("change", sync);
+      sync();
+    })();
+  </script>
+  <script>
+    (function () {
+      // "Flotte ohne Suche auswerten" - hides the search-only settings and repurposes the
+      // single submit button for custom_sim/run_instance.py instead of a FleetPlanning search
+      // (see simulation_overview()'s "queue_fixedfleet" action). Only meaningful with the
+      // custom backend selected - the checkbox already lives inside customSimOnlySettings
+      // above, so it disappears (but stays checked in the DOM) when another backend is picked;
+      // it's re-read here too so a stale checked state never silently switches the submit
+      // button's action while the checkbox itself isn't visible to uncheck.
+      const algorithmSelect = document.getElementById("algorithm");
+      const fixedFleetCheckbox = document.getElementById("run_kind_fixedfleet");
+      const searchOnlySettings = document.getElementById("searchOnlySettings");
+      const hardConstraintsCard = document.getElementById("hardConstraintsCard");
+      const simulateSubmitButton = document.getElementById("simulateSubmitButton");
+      if (!algorithmSelect || !fixedFleetCheckbox || !simulateSubmitButton) {
+        return;
+      }
+      function sync() {
+        const isFixedFleet = fixedFleetCheckbox.checked && algorithmSelect.value === "custom";
+        if (searchOnlySettings) {
+          searchOnlySettings.style.display = isFixedFleet ? "none" : "";
+        }
+        if (hardConstraintsCard) {
+          hardConstraintsCard.style.display = isFixedFleet ? "none" : "";
+        }
+        simulateSubmitButton.value = isFixedFleet ? "queue_fixedfleet" : "queue";
+        simulateSubmitButton.textContent = isFixedFleet ? "Flotte auswerten (ohne Suche)" : "Simulieren";
+      }
+      fixedFleetCheckbox.addEventListener("change", sync);
+      algorithmSelect.addEventListener("change", sync);
+      sync();
+    })();
+  </script>
+  <script>
+    (function () {
+      const searchModeSelect = document.getElementById("search_mode");
+      const adaptiveOnlySettings = document.getElementById("adaptiveOnlySettings");
+      if (!searchModeSelect || !adaptiveOnlySettings) {
+        return;
+      }
+      function sync() {
+        adaptiveOnlySettings.style.display = searchModeSelect.value === "adaptive" ? "" : "none";
+      }
+      searchModeSelect.addEventListener("change", sync);
+      sync();
+    })();
+  </script>
+  <script>
+    (function () {
+      const importButton = document.getElementById("importMetadataButton");
+      const fileInput = document.getElementById("simulation_metadata_file");
+      const importError = document.getElementById("importMetadataError");
+      if (!importButton || !fileInput) {
+        return;
+      }
+      importButton.addEventListener("click", function () {
+        if (!fileInput.files || !fileInput.files.length) {
+          // Deliberately not fileInput.reportValidity()/required - this field lives inside the
+          // main <form> now, and the native constraint-validation API would mark it invalid for
+          // THAT form too, hidden inside a collapsed accordion - the exact bug this file's own
+          // history already ran into once. Plain visible text instead, no validity API involved.
+          if (importError) {
+            importError.classList.remove("d-none");
+          }
+          return;
+        }
+        if (importError) {
+          importError.classList.add("d-none");
+        }
+        const formData = new FormData();
+        formData.append("action", "import_metadata");
+        formData.append("simulation_metadata_file", fileInput.files[0]);
+        importButton.disabled = true;
+        fetch(window.location.href, { method: "POST", body: formData })
+          .then(function (response) {
+            window.location.href = response.url;
+          })
+          .catch(function () {
+            importButton.disabled = false;
+          });
+      });
+    })();
+  </script>
+{% endblock %}

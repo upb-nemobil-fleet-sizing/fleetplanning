@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+    
+{% block head %}
+    <meta charset="UTF-8">
+    <title>Delete Charging Point</title>
+{% endblock %}
+
+{% block content %}
+    <h2>Delete Charging Point - {{ cp.id }}</h2>
+    <p>Dieses Element wird vollständig gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+
+    <ul class="list-group mb-3">
+        <li class="list-group-item"><strong>Guid:</strong> {{ cp.Guid }}</li>
+        <li class="list-group-item"><strong>Latitude:</strong> {{ cp.Location.Latitude }}</li>
+        <li class="list-group-item"><strong>Longitude:</strong> {{ cp.Location.Longitude }}</li>
+        <li class="list-group-item"><strong>Type:</strong> {{ cp.type }}</li>
+        <li class="list-group-item"><strong>State:</strong> {{ cp.state }}</li>
+        <li class="list-group-item"><strong>Maximum Stopping Time (s):</strong> {{ cp.MaximumStoppingTime }}</li>
+        <li class="list-group-item"><strong>Maximum Power Supply (kW):</strong> {{ cp.maximumPowerSupply }}</li>
+        <li class="list-group-item"><strong>Maximum Regenerative Power (kW):</strong> {{ cp.MaximumRegenerativePower }}</li>
+        <li class="list-group-item">
+            <strong>Opening Hours:</strong>
+            <ul class="list-group mt-2">
+            {% if cp.OpeningHours %}
+                <li class="list-group-item">Opening Hours - WeekDays: {{ cp.OpeningHours[0].WeekDays }}</li>
+                <li class="list-group-item">Opening Hours - From: {{ cp.OpeningHours[0].Min }}</li>
+                <li class="list-group-item">Opening Hours - To: {{ cp.OpeningHours[0].Max }}</li>
+            {% else %}
+                <li class="list-group-item">Opening Hours: -</li>
+            {% endif %}
+            </ul>
+        </li>
+
+        <li class="list-group-item"><strong>Operators:</strong> {{ cp.operators[0] if cp.operators }}</li>
+        <li class="list-group-item"><strong>Voltage (V):</strong> {{ cp.voltage }}</li>
+        <li class="list-group-item"><strong>Amperage (A):</strong> {{ cp.amperage }}</li>
+        <li class="list-group-item"><strong>Owner:</strong> {{ cp.owner }}</li>
+    </ul>
+
+    <h5>Position</h5>
+    <div id="map" style="height:400px; border:1px solid #ccc;" class="mb-3"></div>
+
+    <form method="POST">
+        <button type="submit" class="btn btn-danger">Endgültig löschen</button>
+        <a href="{{ url_for('index') }}{{ nav_context_query or '' }}" class="btn btn-secondary">Abbrechen</a>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/form_maps.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            initSinglePointEntityMap({
+                mapId: "map",
+                overlay: {{ map_overlay_data|tojson }},
+                mode: "delete",
+                primaryType: "charging",
+                primaryId: "{{ cp.id }}",
+                editable: false,
+                initialLat: {{ cp.Location.Latitude }},
+                initialLng: {{ cp.Location.Longitude }}
+            });
+        });
+    </script>
+{% endblock %}

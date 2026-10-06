@@ -1,0 +1,65 @@
+# ignore files for git version control
+
+# python and tooling caches
+__pycache__
+*.pyc
+**/*venv*/
+.~lock.*
+cache
+
+# archives and leftovers
+*.zip
+*.tar.gz
+*.tgz
+*.log
+*.bak
+
+# file types
+*.png
+*.gif
+*.json
+*.xml
+*.xml.gz
+
+# exceptions to the file types above
+!frontend/static/images/*.png
+!frontend/static/vendor/**/*.png
+!custom_sim/routing/routing_config.json
+!custom_sim/routing/vehicle_profiles.json
+!custom_sim/parameters.json
+!sumo/hill_model_params.json
+!sumo/validation/max_speed_visual.xml
+
+# local credentials
+rw_credentials.txt
+
+# run output, one folder per backend
+custom_sim/output/
+rw/output/
+sumo/output/
+sumo/output_*/
+data/output/**
+debug/**
+
+# dashboard runtime data
+frontend/uploads_temp/
+frontend/sim_results/**
+
+# instance and example data
+data/input/**
+!data/input/example_plans.xml
+!data/input/example_demand.json
+!data/input/example_basedata.json
+
+# generated routing and network data
+custom_sim/routing/data/**
+sumo/road_network_data/**
+!sumo/road_network_data/*.py
+!sumo/road_network_data/*.sumocfg
+!sumo/road_network_data/pb.net.xml.gz
+
+# local osm tile server data, rebuilt by frontend/maptiles/setup.sh
+frontend/maptiles/data/
+
+# line planning caches
+line_planning/*.pkl

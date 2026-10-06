@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+
+{% block head %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Szenario-Konfigurator</title>
+{% endblock %}
+
+{% block content %}
+    <h1 class="mb-4 text-center">Szenario-Konfigurator</h1>
+    {% set op_points = (loaded_data.get('operationArea') or {}).get('points', []) if loaded_data else [] %}
+    {% set has_op_area_points = op_points and (op_points|length >= 3) %}
+    {% set can_manage_entities = (not read_only) and has_op_area_points %}
+    {# Always the same text, in both lock states - a state-dependent heading here was exactly
+       what made this read as two different pages instead of one page with a switch. Same
+       explanatory-card style as input_upload.html's intro card, not free-standing text. #}
+    <div class="card mb-4">
+      <div class="card-body">
+        <p class="mb-2">
+          Auf dieser Seite werden Fahrzeuge, Ladepunkte und weitere Stammdaten des aktuellen
+          Szenarios verwaltet.
+        </p>
+        <ul class="mb-0">
+          <li><strong>Bearbeitung gesperrt</strong> aus: Fahrzeuge, Ladepunkte usw. können erstellt, bearbeitet und gelöscht werden.</li>
+          <li><strong>Bearbeitung gesperrt</strong> an: keine Änderungen mehr möglich, dafür sind <strong>BaseData exportieren</strong> und <strong>Fahrtdaten exportieren</strong> nutzbar.</li>
+        </ul>
+      </div>
+    </div>
+    {% if read_only and (not loaded_data or not loaded_data.get('cabs')) %}
+      <div class="alert alert-warning border border-warning border-2 mb-4 text-center" role="alert">
+        <strong>Warnung:</strong> Keine Cabs vorhanden.
+      </div>
+    {% endif %}
+    {% if not read_only %}
+      <div id="operationAreaWarning" class="alert alert-warning border border-warning border-2 mb-4 {% if has_op_area_points %}d-none{% endif %}" role="alert">
+        <strong>Hinweis:</strong> Bitte zuerst eine Operation Area mit mindestens 3 Punkten festlegen. Solange keine Operation Area existiert, sind <strong>Create</strong> und <strong>Edit</strong> deaktiviert.
+      </div>
+    {% endif %}
+    {% if requests_outside_area_count %}
+      <div class="alert alert-warning border border-warning border-2 mb-4 d-flex justify-content-between align-items-center" role="alert">
+        <span>
+        {% if requests_outside_area_count == 1 %}
+        <strong>Hinweis:</strong> 1 Fahrtanfrage liegt außerhalb der Operation Area.
+        {% else %}
+        <strong>Hinweis:</strong> {{ requests_outside_area_count }} Fahrtanfragen liegen außerhalb der Operation Area.
+        {% endif %}
+        </span>
+        {% if not read_only %}
+        <form method="POST" action="{{ url_for('filter_requests_outside_area') }}" class="ms-3 mb-0">
+          <button type="submit" class="btn btn-sm btn-outline-warning">Außerhalb liegende Anfragen entfernen</button>
+        </form>
+        {% endif %}
+      </div>
+    {% endif %}
+    <form id="dataForm">
+      {% set has_op_area = has_op_area_points %}
+      {% set has_time = loaded_data and (loaded_data.get('startTime') or loaded_data.get('endTime')) %}
+      {% set is_open = not (has_op_area or has_time) %}
+      <div class="accordion mb-4" id="accordionOpArea">
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingOpArea">
+            <button class="accordion-button {% if not is_open %}collapsed{% endif %}" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#collapseOpArea"
+                    aria-expanded="{{ 'true' if is_open else 'false' }}"
+                    aria-controls="collapseOpArea">
+              Operation Area &amp; Zeitintervall
+            </button>
+          </h2>
+          <div id="collapseOpArea"
+               class="accordion-collapse collapse {% if is_open %}show{% endif %}"
+               aria-labelledby="headingOpArea"
+               data-bs-parent="#accordionOpArea">
+            <div class="accordion-body">
+              <div class="row">
+                <div class="col-md-6 mb-4">
+                  <div class="card">
+                    <div class="card-body">
+                      <h5 class="card-title">Operation Area (Polygon)</h5>
+                      {% if not read_only %}
+                        <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="startPolygonMode()">Polygon zeichnen</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearPolygon()">Polygon löschen</button>
+                      {% endif %}
+                      <ul class="list-group mt-3 scroll-list" id="polygonList"></ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                  <div class="card">
+                    <div class="card-body">
+                      <h5 class="card-title">Zeitintervall</h5>
+                      <div class="mb-3">
+                        <label for="startTime" class="form-label">Startzeit</label>
+                        <input type="datetime-local" id="startTime" class="form-control"
+                               value="{{ loaded_data.startTime if loaded_data and loaded_data.startTime }}" {% if read_only %}disabled{% endif %}>
+                      </div>
+                      <div>
+                        <label for="endTime" class="form-label">Endzeit</label>
+                        <input type="datetime-local" id="endTime" class="form-control"
+                               value="{{ loaded_data.endTime if loaded_data and loaded_data.endTime }}" {% if read_only %}disabled{% endif %}>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title d-flex justify-content-between align-items-center">
+                Cabs
+                {% if not read_only %}
+                  <a href="/cabs/create{{ nav_context_query or '' }}" class="btn btn-sm btn-success requires-op-area {% if not can_manage_entities %}disabled{% endif %}" {% if not can_manage_entities %}aria-disabled="true" tabindex="-1" onclick="return false;" title="Bitte zuerst Operation Area festlegen"{% endif %}>Create</a>
+                {% endif %}
+              </h5>
+              <ul class="list-group mt-3 scroll-list" id="cabList">
+                {% if loaded_data and loaded_data.cabs %}
+                  {% for cab in loaded_data.cabs %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      {{ cab.id }} – {{ cab.label }} @ ({{ cab.InitialLocation.Latitude }}, {{ cab.InitialLocation.Longitude }})
+                      <div>
+                        {% if not read_only %}
+                          <a href="{{ url_for('edit_cab', cab_id=cab.id) }}{{ nav_context_query or '' }}" class="btn btn-sm btn-outline-primary me-2 requires-op-area {% if not can_manage_entities %}disabled{% endif %}" {% if not can_manage_entities %}aria-disabled="true" tabindex="-1" onclick="return false;" title="Bitte zuerst Operation Area festlegen"{% endif %}>Edit</a>
+                          <a href="{{ url_for('delete_cab', cab_id=cab.id) }}{{ nav_context_query or '' }}" class="btn btn-sm btn-outline-danger">Delete</a>
+                        {% endif %}
+                      </div>
+                    </li>
+                  {% endfor %}
+                {% else %}
+                  <li class="list-group-item text-muted">Keine Cabs vorhanden</li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Charging Points</h5>
+                {% if not read_only %}
+                  <a href="/chargingPoints/create{{ nav_context_query or '' }}" class="btn btn-sm btn-success requires-op-area {% if not can_manage_entities %}disabled{% endif %}" {% if not can_manage_entities %}aria-disabled="true" tabindex="-1" onclick="return false;" title="Bitte zuerst Operation Area festlegen"{% endif %}>Create</a>
+                {% endif %}
+              </div>
+              <ul class="list-group mt-3 scroll-list">
+                {% if loaded_data and loaded_data.chargingPoints %}
+                  {% for cp in loaded_data.chargingPoints %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      {{ cp.id }} – {{ cp.type }} @ ({{ cp.Location.Latitude }}, {{ cp.Location.Longitude }})
+                      <div>
+                        {% if not read_only %}
+                          <div class="row mb-1">
+                            <a href="{{ url_for('edit_chargingpoint', cp_id=cp.id) }}{{ nav_context_query or '' }}" class="btn btn-sm btn-outline-primary me-2 requires-op-area {% if not can_manage_entities %}disabled{% endif %}" {% if not can_manage_entities %}aria-disabled="true" tabindex="-1" onclick="return false;" title="Bitte zuerst Operation Area festlegen"{% endif %}>Edit</a>
+                          </div>
+                          <div class="row mb-1">
+                            <a href="{{ url_for('delete_chargingpoint', cp_id=cp.id) }}{{ nav_context_query or '' }}" class="btn btn-sm btn-outline-danger">Delete</a>
+                          </div>
+                        {% endif %}
+                      </div>
+                    </li>
+                  {% endfor %}
+                {% else %}
+                  <li class="list-group-item text-muted">Keine Charging Points vorhanden</li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Pros</h5>
+                {% if not read_only %}
+                  <a href="/pros/create{{ nav_context_query or '' }}" class="btn btn-sm btn-success requires-op-area {% if not can_manage_entities %}disabled{% endif %}" {% if not can_manage_entities %}aria-disabled="true" tabindex="-1" onclick="return false;" title="Bitte zuerst Operation Area festlegen"{% endif %}>Create</a>
+                {% endif %}
+              </div>
+              <ul class="list-group mt-3 scroll-list">
+                {% if loaded_data and loaded_data.proSchedules %}
+                  {% for pro in loaded_data.proSchedules %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      {{ pro.id }} @ ({{ pro.InitialLocation.Latitude }}, {{ pro.InitialLocation.Longitude }})
+                      <div>
+                        {% if not read_only %}
+                          <a href="{{ url_for('edit_pro', pro_id=pro.id) }}{{ nav_context_query or '' }}" class="btn btn-sm btn-outline-primary me-2 requires-op-area {% if not can_manage_entities %}disabled{% endif %}" {% if not can_manage_entities %}aria-disabled="true" tabindex="-1" onclick="return false;" title="Bitte zuerst Operation Area festlegen"{% endif %}>Edit</a>
+                          <a href="{{ url_for('delete_pro', pro_id=pro.id) }}{{ nav_context_query or '' }}" class="btn btn-sm btn-outline-danger">Delete</a>
+                        {% endif %}
+                      </div>
+                    </li>
+                  {% endfor %}
+                {% else %}
+                  <li class="list-group-item text-muted">Keine Pros vorhanden</li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Chaining Locations</h5>
+                {% if not read_only %}
+                  <a href="/chainingLocations/create{{ nav_context_query or '' }}" class="btn btn-sm btn-success requires-op-area {% if not can_manage_entities %}disabled{% endif %}" {% if not can_manage_entities %}aria-disabled="true" tabindex="-1" onclick="return false;" title="Bitte zuerst Operation Area festlegen"{% endif %}>Create</a>
+                {% endif %}
+              </div>
+              <ul class="list-group mt-3 scroll-list">
+                {% if loaded_data and loaded_data.chainingLocations %}
+                  {% for loc in loaded_data.chainingLocations %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      {{ loc.id }} – {{ loc.Type }}  
+                      (Start: {{ loc.LocationStart.Latitude }}, {{ loc.LocationStart.Longitude }})
+                      <div>
+                        {% if not read_only %}
+                          <div class="row mb-1">
+                            <a href="{{ url_for('edit_chaininglocation', loc_id=loc.id) }}{{ nav_context_query or '' }}" class="btn btn-sm btn-outline-primary me-2 requires-op-area {% if not can_manage_entities %}disabled{% endif %}" {% if not can_manage_entities %}aria-disabled="true" tabindex="-1" onclick="return false;" title="Bitte zuerst Operation Area festlegen"{% endif %}>Edit</a>
+                          </div>
+                          <div class="row mb-1">
+                            <a href="{{ url_for('delete_chaininglocation', loc_id=loc.id) }}{{ nav_context_query or '' }}" class="btn btn-sm btn-outline-danger">Delete</a>
+                          </div>
+                        {% endif %}
+                      </div>
+                    </li>
+                  {% endfor %}
+                {% else %}
+                  <li class="list-group-item text-muted">Keine Chaining Locations vorhanden</li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Chain Routes</h5>
+                {% if not read_only %}
+                  <a href="/chainRoutes/create{{ nav_context_query or '' }}" class="btn btn-sm btn-success requires-op-area {% if not can_manage_entities %}disabled{% endif %}" {% if not can_manage_entities %}aria-disabled="true" tabindex="-1" onclick="return false;" title="Bitte zuerst Operation Area festlegen"{% endif %}>Create</a>
+                {% endif %}
+              </div>
+              <ul class="list-group mt-3 scroll-list">
+                {% if loaded_data and loaded_data.chainRoutes %}
+                  {% for route in loaded_data.chainRoutes %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      {{ route.id }} – {{ route.Guid }}  
+                      (Start: {{ route.StartLocation }}, End: {{ route.EndLocation }})
+                      <div>
+                        {% if not read_only %}
+                          <div class="row mb-1">
+                            <a href="{{ url_for('edit_chainroute', route_id=route.id) }}{{ nav_context_query or '' }}" class="btn btn-sm btn-outline-primary me-2 requires-op-area {% if not can_manage_entities %}disabled{% endif %}" {% if not can_manage_entities %}aria-disabled="true" tabindex="-1" onclick="return false;" title="Bitte zuerst Operation Area festlegen"{% endif %}>Edit</a>
+                          </div>
+                          <div class="row mb-1">
+                            <a href="{{ url_for('delete_chainroute', route_id=route.id) }}{{ nav_context_query or '' }}" class="btn btn-sm btn-outline-danger">Delete</a>
+                          </div>
+                        {% endif %}
+                      </div>
+                    </li>
+                  {% endfor %}
+                {% else %}
+                  <li class="list-group-item text-muted">Keine Chain Routes vorhanden</li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Chain Route Schedules</h5>
+                {% if not read_only %}
+                  <a href="/chainRouteSchedules/create{{ nav_context_query or '' }}" class="btn btn-sm btn-success requires-op-area {% if not can_manage_entities %}disabled{% endif %}" {% if not can_manage_entities %}aria-disabled="true" tabindex="-1" onclick="return false;" title="Bitte zuerst Operation Area festlegen"{% endif %}>Create</a>
+                {% endif %}
+              </div>
+              <ul class="list-group mt-3 scroll-list">
+                {% if loaded_data and loaded_data.chainRouteSchedules %}
+                  {% for crs in loaded_data.chainRouteSchedules %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      {{ crs.id }} - Departure: ({{ crs.Departure }}) → Arrival: ({{ crs.Arrival }})
+                      <div>
+                        {% if not read_only %}
+                          <div class="row mb-1">
+                            <a href="{{ url_for('edit_chainrouteschedule', crs_id=crs.id) }}{{ nav_context_query or '' }}" class="btn btn-sm btn-outline-primary me-2 requires-op-area {% if not can_manage_entities %}disabled{% endif %}" {% if not can_manage_entities %}aria-disabled="true" tabindex="-1" onclick="return false;" title="Bitte zuerst Operation Area festlegen"{% endif %}>Edit</a>
+                          </div>
+                          <div class="row mb-1">
+                            <a href="{{ url_for('delete_chainrouteschedule', crs_id=crs.id) }}{{ nav_context_query or '' }}" class="btn btn-sm btn-outline-danger">Delete</a>
+                          </div>
+                        {% endif %}
+                      </div>
+                    </li>
+                  {% endfor %}
+                {% else %}
+                  <li class="list-group-item text-muted">Keine Chain Route Schedules vorhanden</li>
+                {% endif %}
+              </ul>
+              {% if not read_only %}
+                <hr class="my-3">
+                <div class="small text-muted">
+                  Standardmäßig erzeugt die Flottenplanung aus diesen Einträgen automatisch einen
+                  vollständigen, durchführbaren Pro-Fahrplan (Taktung, Umläufe, Fahrzeiten) - jeder
+                  Eintrag hier dient dabei nur als Vorlage für die erste Abfahrt seiner Linie, der
+                  Rest wird beim Start einer Simulation überschrieben.
+                </div>
+                <div class="form-check form-switch mt-2">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="useOriginalProTimetable"
+                    {% if loaded_data.useOriginalProTimetable %}checked{% endif %}>
+                  <label class="form-check-label" for="useOriginalProTimetable">
+                    Stattdessen die obige Liste unverändert verwenden (nicht empfohlen)
+                  </label>
+                </div>
+                <div id="useOriginalProTimetableWarning" class="alert alert-warning py-2 px-3 mt-2 mb-0 small {% if not loaded_data.useOriginalProTimetable %}d-none{% endif %}" role="alert">
+                  Achtung: Die Liste wird dann ungeprüft übernommen, ohne gegen Fahrzeiten oder
+                  Umlaufplanung geprüft zu werden. Ein von Hand erstellter oder unvollständiger
+                  Zeitplan kann so zu nicht durchführbaren Einsätzen führen.
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Ride Requests</h5>
+                {% if not read_only %}
+                  <a href="/rideRequests/create{{ nav_context_query or '' }}" class="btn btn-sm btn-success requires-op-area {% if not can_manage_entities %}disabled{% endif %}" {% if not can_manage_entities %}aria-disabled="true" tabindex="-1" onclick="return false;" title="Bitte zuerst Operation Area festlegen"{% endif %}>Create</a>
+                {% endif %}
+              </div>
+              <ul class="list-group mt-3 scroll-list">
+                {% if loaded_data and loaded_data.rideRequests %}
+                  {% for rr in loaded_data.rideRequests %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      {{ rr.id }} – Start: ({{ rr.CurrentLocation.Latitude }}, {{ rr.CurrentLocation.Longitude }})
+                      → End: ({{ rr.TargetLocation.Latitude }}, {{ rr.TargetLocation.Longitude }})
+                      <div>
+                        {% if not read_only %}
+                          <div class="row mb-1">
+                            <a href="{{ url_for('edit_ride_request', req_id=rr.id) }}{{ nav_context_query or '' }}" class="btn btn-sm btn-outline-primary me-2 requires-op-area {% if not can_manage_entities %}disabled{% endif %}" {% if not can_manage_entities %}aria-disabled="true" tabindex="-1" onclick="return false;" title="Bitte zuerst Operation Area festlegen"{% endif %}>Edit</a>
+                          </div>
+                          <div class="row mb-1">
+                            <a href="{{ url_for('delete_ride_request', req_id=rr.id) }}{{ nav_context_query or '' }}" class="btn btn-sm btn-outline-danger">Delete</a>
+                          </div>
+                        {% endif %}
+                      </div>
+                    </li>
+                  {% endfor %}
+                {% else %}
+                  <li class="list-group-item text-muted">Keine Ride Requests vorhanden</li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6"></div>
+      </div>
+      {# The switch sits directly between the two buttons it gates - exporting while still
+         mid-edit could download a state you didn't mean to, so both stay disabled until it's
+         on. Toggling it still reloads the page (every reload also re-syncs with whatever's
+         actually loaded server-side, a live no-reload toggle wouldn't), it just no longer reads
+         as navigating to a different page. #}
+      <div class="row mb-4 align-items-center">
+        <div class="col-md-4 text-center">
+          <button type="button" class="btn btn-outline-primary btn-lg {% if not read_only %}disabled{% endif %}"
+                  {% if not read_only %}aria-disabled="true" tabindex="-1" title="Erst über den Schalter Bearbeitung gesperrt aktivieren, um zu exportieren"{% endif %}
+                  onclick="{% if read_only %}exportBaseJson(){% else %}return false;{% endif %}">
+                  BaseData exportieren
+          </button>
+        </div>
+        <div class="col-md-4 text-center my-3 my-md-0">
+          <div class="form-check form-switch fs-5 d-inline-flex align-items-center">
+            <input class="form-check-input me-2" type="checkbox" role="switch" id="lockToggle"
+                   {% if read_only %}checked{% endif %}
+                   onchange="window.location.href = this.checked
+                     ? '{{ url_for('index', locked=1) }}{{ (nav_context_query or '')|replace('?', '&', 1) }}'
+                     : '{{ url_for('index') }}{{ nav_context_query or '' }}';">
+            <label class="form-check-label" for="lockToggle">Bearbeitung gesperrt</label>
+          </div>
+        </div>
+        <div class="col-md-4 text-center">
+          <button type="button" class="btn btn-outline-primary btn-lg {% if not read_only %}disabled{% endif %}"
+                  {% if not read_only %}aria-disabled="true" tabindex="-1" title="Erst über den Schalter Bearbeitung gesperrt aktivieren, um zu exportieren"{% endif %}
+                  onclick="{% if read_only %}exportRideJson(){% else %}return false;{% endif %}">
+                  Fahrtdaten exportieren
+          </button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Karte</h5>
+          <div id="map" style="height: 500px;"></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col d-flex justify-content-start mt-3">
+          <a href="{{ url_for('upload_page') }}{{ nav_context_query or '' }}" class="btn btn-primary">Zur Upload-Seite</a>
+        </div>
+        <div class="col d-flex justify-content-end mt-3">
+          <a href="{{ url_for('simulation_overview') }}{{ nav_context_query or '' }}" class="btn btn-primary">Zur Simulations-Übersicht</a>
+        </div>
+      </div>
+    </form>
+
+  <div id="legend" style="display:none; background:#fff; padding:8px 10px; border-radius:6px;
+                           line-height:1.35; font-size:14px; box-shadow:0 1px 4px rgba(0,0,0,.2);
+                           z-index:1000;">
+    <strong>Legende</strong><br>
+    <label class="map-legend-option map-legend-cabs"><input type="checkbox" id="toggleCabs" checked> Cabs</label><br>
+    <label class="map-legend-option map-legend-chargers"><input type="checkbox" id="toggleChargers" checked> Charging Points</label><br>
+    <label class="map-legend-option map-legend-pros"><input type="checkbox" id="togglePros" checked> Pros</label><br>
+    <label class="map-legend-option map-legend-chains"><input type="checkbox" id="toggleChains" checked> Chaining Locations</label><br>
+    {% if demo_mode %}
+    <label class="map-legend-option map-legend-chain-routes"><input type="checkbox" id="toggleChainRoutes" checked> Chaining Lines</label><br>
+    {% endif %}
+    <label class="map-legend-option map-legend-rides"><input type="checkbox" id="toggleRides" > Ride Requests</label><br>
+    <label class="map-legend-option map-legend-ride-lines"><input type="checkbox" id="toggleRideLines" > Ride Request Lines</label>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    window.demoMode = {{ 'true' if demo_mode else 'false' }};
+    window.readOnly = {{ 'true' if read_only else 'false' }};
+  </script>
+  <script src="{{ url_for('static', filename='vendor/leaflet-1.9.4/leaflet.js') }}"></script>
+  <script>window.fleetData = {{ ui_data|tojson }};</script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    function exportBaseJson() {
+      window.location.href = "/export-base-json";
+    }
+  </script>
+{% endblock %}
